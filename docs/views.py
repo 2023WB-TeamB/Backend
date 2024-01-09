@@ -161,7 +161,7 @@ def docs_share(request):
         doc = Docs.objects.get(pk=docs_id)
         print(doc)
         if doc.url is not None:
-            return Response({"message": "이미 URL이 생성된 문서입니다", "status": 409}, status=status.HTTP_409_CONFLICT)
+            return Response({"message": "이미 URL이 생성된 문서입니다.", "status": 409, "existing_url": doc.url}, status=status.HTTP_409_CONFLICT)
 
         # UUID를 사용하여 고유한 URL 생성
         base_url = 'http://127.0.0.1:8000/api/v1/docs/share/'
