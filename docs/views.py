@@ -33,10 +33,10 @@ class DocsDetail(APIView): # Docs의 detail을 보여주는 역할
 def docs_create(request):
 
     if request.method == 'POST':
-        language = request.data['language']
-        repository_url = request.data['repository_url']
+        repository_url = request.data.get('repository_url')
+        language = request.data.get('language')
 
-        if language is None or repository_url is None:
+        if repository_url is None or language is None or language not in ['KOR', 'ENG']:
             return Response({"message": "잘못된 요청입니다. 입력 형식을 확인해 주세요.", "status": 400}, status=status.HTTP_400_BAD_REQUEST)
 
         request.data['user_id'] = User.objects.filter(id=1).first().id
