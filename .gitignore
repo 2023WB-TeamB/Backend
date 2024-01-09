@@ -647,3 +647,6 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/windows,macos,intellij,python,pycharm,pycharm+all,pycharm+iml,django,visualstudiocode
+docs/migrations/
+
+users/migrations/
