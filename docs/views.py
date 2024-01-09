@@ -1,7 +1,8 @@
+from django.http import Http404
 from django.urls import is_valid_path
+from rest_framework.views import APIView
 from .models import Docs, User
-from .serializer import DocsSerializer
-
+from .serializers import DocsSerializer
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
@@ -11,7 +12,7 @@ import uuid
 class DocsList(APIView):
     def get(self, request): # 문서 조회
         docs = Docs.objects.filter(is_deleted=False)  # is_deleted가 False인 객체만 조회
-        serializer = Serializer(docs, many=True)
+        serializer = DocsSerializer(docs, many=True)
         return Response(serializer.data)
 
 class DocsDetail(APIView): # Docs의 detail을 보여주는 역할
@@ -22,7 +23,7 @@ class DocsDetail(APIView): # Docs의 detail을 보여주는 역할
             raise Http404
     def get(self, request, pk): # 문서 상세 조회
         doc = self.get_object(pk)
-        serializer = Serializer(doc)
+        serializer =  DocsSerializer(doc)
         return Response(serializer.data)
 
 # from django.shortcuts import get_object_or_404, get_list_or_404
