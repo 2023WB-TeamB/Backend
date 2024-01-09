@@ -33,6 +33,12 @@ class DocsDetail(APIView): # Docs의 detail을 보여주는 역할
 def docs_create(request):
 
     if request.method == 'POST':
+        language = request.data['language']
+        repository_url = request.data['repository_url']
+
+        if language is None or repository_url is None:
+            return Response({"message": "잘못된 요청입니다. 입력 형식을 확인해 주세요.", "status": 400}, status=status.HTTP_400_BAD_REQUEST)
+
         request.data['user_id'] = User.objects.filter(id=1).first().id
         request.data['title'] = "OPGC (Open Source Project's Github Contributions)"
         request.data['content'] = """## 프로젝트 소개
@@ -105,7 +111,6 @@ OPGC 프로젝트는 다음과 같은 기능을 제공합니다.
 각 앱은 자체적인 모델과 API를 구성하고 있으며, 기능별로 분리되어 관리되고 있습니다.
 
 위와 같은 기능들은 Django REST framework를 사용하여 구현되었으며, 캐싱을 위해 cacheops를, 에러 로깅을 위해 sentry-sdk를 사용하고 있습니다. 또한, front-end와 연계하여 쉽게 사용할 수 있도록 API를 제공하고 있습니다."""
-        request.data['language'] = 'KOR'
 
         serializer = DocsSerializer(data=request.data)
         if serializer.is_valid():
