@@ -1,6 +1,9 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404
 from django.urls import is_valid_path
 from rest_framework.views import APIView
+
+from django.contrib.auth.models import User
 from .models import Docs, User
 from .serializers import DocsSerializer
 from rest_framework.response import Response
@@ -8,37 +11,68 @@ from rest_framework.decorators import api_view
 from rest_framework import status
 import uuid
 
-
 class DocsList(APIView):
-    def get(self, request): # 문서 조회
-        docs = Docs.objects.filter(is_deleted=False)  # is_deleted가 False인 객체만 조회
+    def get(self, request, *args, **kwargs):  # 문서 조회
+        user_id = request.data.get('user_id')
+
+        if not User.objects.filter(id=user_id).exists():  # user_id가 User 테이블에 존재하지 않는 경우
+            return Response({
+                "status": 400,
+                "message": "user_id가 존재하지 않습니다.",
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        docs = Docs.objects.filter(is_deleted=False, user_id=user_id)  # is_deleted가 False인 객체만 조회
+        if not docs:  # 문서가 존재하지 않는 경우
+            return Response({
+                "status": 400,
+                "message": "해당 user_id에 해당하는 문서가 존재하지 않습니다.",
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = DocsSerializer(docs, many=True)
-        return Response(serializer.data)
+        docs_data = []
+        for item in serializer.data:
+            docs_data.append({
+                "id": item['id'],
+                "title": item['title']
+            })
+        response_data = {
+                "status": 200,
+                "message": '문서 조회 성공',
+                "data": {
+                    "docs": docs_data
+                }
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
+
 
 class DocsDetail(APIView): # Docs의 detail을 보여주는 역할
-    def get_object(self, pk):  # Docs 객체 가져오기
-        try:
-            return Docs.objects.get(pk=pk, is_deleted=False)  # is_deleted가 False인 객체만 조회
-        except Docs.DoesNotExist:
-            raise Http404
-    def get(self, request, pk): # 문서 상세 조회
-        doc = self.get_object(pk)
-        serializer =  DocsSerializer(doc)
-        return Response(serializer.data)
 
-# from django.shortcuts import get_object_or_404, get_list_or_404
+    def get(self, request, *args, **kwargs):  # 문서 상세 조회, get() 메소드에서 URL의 경로 인자를 가져오려면 self.kwargs를 사용해야함.
+        docs_id = self.kwargs.get("id")
+        if docs_id is None:
+            return Response({
+                "status": 400,
+                "message": "id 파라미터가 필요합니다.",
+            })
+        try:
+            docs = Docs.objects.get(is_deleted=False, pk=docs_id)  # is_deleted가 False인 객체만 조회
+        except ObjectDoesNotExist:
+            return Response({
+                "status": 404,
+                "message": "해당 id를 가진 문서를 찾을 수 없습니다.",
+            })
+
+        serializer = DocsSerializer(docs) #get 메소드에서 docs_detail 함수를 직접 호출하여 serializer.data를 처리.
+        return self.docs_detail([serializer.data]) # docs_detail 메소드가 리스트를 인자로 받음.
+
+
+#from django.shortcuts import get_object_or_404, get_list_or_404
 
 
 @api_view(['POST'])
 def docs_create(request):
 
     if request.method == 'POST':
-        repository_url = request.data.get('repository_url')
-        language = request.data.get('language')
-
-        if repository_url is None or language is None or language not in ['KOR', 'ENG']:
-            return Response({"message": "잘못된 요청입니다. 입력 형식을 확인해 주세요.", "status": 400}, status=status.HTTP_400_BAD_REQUEST)
-
         request.data['user_id'] = User.objects.filter(id=1).first().id
         request.data['title'] = "OPGC (Open Source Project's Github Contributions)"
         request.data['content'] = """## 프로젝트 소개
@@ -111,6 +145,7 @@ OPGC 프로젝트는 다음과 같은 기능을 제공합니다.
 각 앱은 자체적인 모델과 API를 구성하고 있으며, 기능별로 분리되어 관리되고 있습니다.
 
 위와 같은 기능들은 Django REST framework를 사용하여 구현되었으며, 캐싱을 위해 cacheops를, 에러 로깅을 위해 sentry-sdk를 사용하고 있습니다. 또한, front-end와 연계하여 쉽게 사용할 수 있도록 API를 제공하고 있습니다."""
+        request.data['language'] = 'KOR'
 
         serializer = DocsSerializer(data=request.data)
         if serializer.is_valid():
@@ -122,17 +157,11 @@ OPGC 프로젝트는 다음과 같은 기능을 제공합니다.
 def docs_share(request):
     if request.method == 'POST':
         docs_id = request.data.get('docs_id')
-
-        if docs_id is None:
-            return Response({"message": "문서 ID를 입력해 주세요.", "status": 400}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            doc = Docs.objects.get(pk=docs_id)
-        except Docs.DoesNotExist:
-            return Response({"message": "존재하지 않는 문서 ID입니다.", "status": 404}, status=status.HTTP_404_NOT_FOUND)
-
+        print(docs_id)
+        doc = Docs.objects.get(pk=docs_id)
+        print(doc)
         if doc.url is not None:
-            return Response({"message": "이미 URL이 생성된 문서입니다.", "status": 409}, status=status.HTTP_409_CONFLICT)
+            return Response({"message": "이미 URL이 생성된 문서입니다", "status": 409}, status=status.HTTP_409_CONFLICT)
 
         # UUID를 사용하여 고유한 URL 생성
         base_url = 'http://127.0.0.1:8000/api/v1/docs/share/'
