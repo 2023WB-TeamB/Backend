@@ -117,7 +117,9 @@ OPGC 프로젝트는 다음과 같은 기능을 제공합니다.
 def docs_share(request):
     if request.method == 'POST':
         docs_id = request.data.get('docs_id')
-        print(docs_id)
+        if docs_id is None:
+            return Response({"message": "문서 ID를 입력해주세요", "status": 400}, status=status.HTTP_400_BAD_REQUEST)
+
         doc = Docs.objects.get(pk=docs_id)
         print(doc)
         if doc.url is not None:
