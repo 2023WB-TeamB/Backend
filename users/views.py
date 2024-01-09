@@ -1,6 +1,5 @@
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
 # Create your views here.
 import jwt
 
@@ -14,8 +13,16 @@ from rest_framework.response import Response
 from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
 
+# swagger 관련
+from rest_framework.views import APIView
+from drf_yasg.utils       import swagger_auto_schema
+from drf_yasg             import openapi
+
 
 class RegisterAPIView(APIView):
+    task_id = openapi.Parameter('task_id', openapi.IN_PATH, description='task_id path', required=True, type=openapi.TYPE_NUMBER)
+    @swagger_auto_schema(tags=['USER'], manual_parameters=[task_id], responses={200: 'Success'})
+    # 회원가입
     def post(self, request):
         serializer = UserSerializer(data=request.data)
 
@@ -64,7 +71,12 @@ class RegisterAPIView(APIView):
 #         return super().update(request, *args, **kwargs)
 
 
+
 class AuthAPIView(APIView):
+    task_id = openapi.Parameter('task_id', openapi.IN_PATH, description='task_id path', required=True,
+                                type=openapi.TYPE_NUMBER)
+
+    @swagger_auto_schema(tags=['USER'], manual_parameters=[task_id], responses={200: 'Success'})
     # 유저 정보 확인
     def get(self, request):
         try:
@@ -76,8 +88,10 @@ class AuthAPIView(APIView):
             serializer = SignSerializer(instance=user)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
+
         except(jwt.exceptions.ExpiredSignatureError):
             # 토큰 만료 시 토큰 갱신
+
             data = {'refresh': request.COOKIES.get('refresh', None)}
             serializer = TokenRefreshSerializer(data=data)
             if serializer.is_valid(raise_exception=True):
@@ -97,6 +111,9 @@ class AuthAPIView(APIView):
             # 사용 불가능한 토큰
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
+
+
+    @swagger_auto_schema(tags=['USER'], manual_parameters=[task_id], responses={200: 'Success'})
     # 로그인
     def post(self, request):
         # 유저 인증
@@ -127,6 +144,8 @@ class AuthAPIView(APIView):
         else:
             return Response({'message': 'Invalid email or password.'}, status=status.HTTP_400_BAD_REQUEST)
 
+
+    @swagger_auto_schema(tags=['USER'], manual_parameters=[task_id], responses={200: 'Success'})
     # 로그아웃
     def delete(self, request):
         # 쿠키에 저장된 토큰 삭제
