@@ -3,18 +3,6 @@ version: "3.9"
 
 # 띄울 컨테이너 목록
 services:
-  # 순서상 database가 먼저 와야 함
-  mysql:
-    image: mysql:8
-    # 환경 설정 부분
-    env_file:
-      - ./.env
-    container_name: gitodoc_db
-    ports:
-      - "3306:3306"
-    # 가상 네트워크 연결
-    networks:
-      - gtd
 
   backend:
     # 환경 설정 부분
@@ -31,16 +19,5 @@ services:
     restart: on-failure
     ports:
       - 8000:8000
-    # 가상 네트워크 연결
-    links:
-      - mysql:mysql
-    networks:
-      - gtd
-    depends_on:
-      - mysql
     expose:
       - 8000
-
-networks:
-  gtd:
-    driver: bridge
