@@ -1,0 +1,43 @@
+name: Django CI
+
+
+on:
+  push:
+    branches: [ "develop" ]
+
+jobs:
+  build:
+
+    runs-on: self-hosted
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [ 3.9 ]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: create env file
+      run: |
+        touch .env
+        echo "${{ secrets.ENV_VARS }}" >> .env
+
+    - name: Docker-Compose Down
+      run: |
+        if [ "$(docker ps -q -f name=container_name)" ]; then
+          docker-compose -f docker-compose.dev.yml down
+        fi
+
+    - name: Docker-Compose Build
+      run: |
+        docker-compose -f docker-compose.dev.yml build
+
+    - name: Docker-Compose Up
+      run: |
+        docker-compose -f docker-compose.dev.yml up -d --remove-orphans > result.log 2>&1  # 결과를 파일에 저장
+        cat result.log
+        grep -Eq "Creating backend \.\.\. done|Recreating backend \.\.\. done" result.log  # 파일에서 "Creating backend ... done" 또는 "Recreating backend ... done"이 포함된 줄이 있는지 확인
+        if [ $? -ne 0 ]; then  # 위의 문자열이 포함된 줄이 없으면
+          docker-compose -f docker-compose.dev.yml down  # Docker 컨테이너를 종료
+          exit 1  # 실패 상태로 종료
+        fi
