@@ -124,7 +124,7 @@ class AuthAPIView(APIView):
             access_token = str(token.access_token)
             res = Response(
                 {
-                    "user": serializer.data,
+                    # "user": serializer.data,
                     "message": "login success",
                     "token": {
                         "access": access_token,
