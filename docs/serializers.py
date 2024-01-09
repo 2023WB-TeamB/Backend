@@ -37,3 +37,20 @@ class DocsSerializer(serializers.ModelSerializer):
             }
         }
         return Response(response_data, status=status.HTTP_201_CREATED)
+
+    def docs_list(self, data):
+        serializer = DocsSerializer(data, many=True)
+        docs_data = []
+        for item in serializer.data:
+            docs_data.append({
+                "id": item['id'],
+                "title": item['title']
+            })
+        response_data = {
+            "status": 200,
+            "message": '문서 조회 성공',
+            "data": {
+                "docs": docs_data
+            }
+        }
+        return Response(response_data, status=status.HTTP_201_CREATED)

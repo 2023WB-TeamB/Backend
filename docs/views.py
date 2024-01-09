@@ -11,9 +11,17 @@ import uuid
 
 class DocsList(APIView):
     def get(self, request): # 문서 조회
-        docs = Docs.objects.filter(is_deleted=False)  # is_deleted가 False인 객체만 조회
-        serializer = DocsSerializer(docs, many=True)
-        return Response(serializer.data)
+        user_id = request.data.get('user_id')
+        if user_id is None:
+            return Response({
+                "status": 400,
+                "message": "user_id 파라미터가 필요합니다.",
+            })
+
+        docs = Docs.objects.filter(is_deleted=False, user_id=user_id)  # is_deleted가 False인 객체만 조회
+        serializer = DocsSerializer(data=request.data)
+        return serializer.docs_list(data=docs)
+
 
 class DocsDetail(APIView): # Docs의 detail을 보여주는 역할
     def get_object(self, pk):  # Docs 객체 가져오기
