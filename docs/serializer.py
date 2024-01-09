@@ -23,3 +23,13 @@ class DocsSerializer(serializers.ModelSerializer):
             }
         }
         return Response(response_data, status=status.HTTP_201_CREATED)
+
+    def docs_share(self, data):
+        response_data = {
+            "message" : "문서 공유 URL 생성 성공",
+            "status" : 201,
+            "data": {
+            "share_url" : "문서 공유 URL",
+            }
+        }
+        return Response(response_data, status=status.HTTP_201_CREATED)

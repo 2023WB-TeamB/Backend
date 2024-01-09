@@ -5,6 +5,7 @@ from .serializer import DocsSerializer
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
+import uuid
 
 
 # from django.shortcuts import get_object_or_404, get_list_or_404
@@ -93,3 +94,21 @@ OPGC 프로젝트는 다음과 같은 기능을 제공합니다.
             serializer.save()
             return serializer.response(data=serializer.data)
         return Response(serializer.errors, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+def docs_share(request):
+    if request.method == 'POST':
+        docs_id = request.data.get('docs_id')
+        print(docs_id)
+        doc = Docs.objects.get(pk=docs_id)
+        print(doc)
+        if doc.url is not None:
+            return Response({"message": "이미 URL이 생성된 문서입니다", "status": 409}, status=status.HTTP_409_CONFLICT)
+
+        # UUID를 사용하여 고유한 URL 생성
+        base_url = 'http://127.0.0.1:8000/api/v1/docs/share/'
+        unique_url = base_url + str(uuid.uuid4())
+        doc.url = unique_url
+        doc.save()
+
+        return Response({"message": "문서 공유 URL 생성 성공", "status": 201, "data": {"url": doc.url}}, status=status.HTTP_201_CREATED)
