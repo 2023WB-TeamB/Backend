@@ -164,7 +164,7 @@ def docs_share(request):
         return Response({"message": "문서 공유 URL 생성 성공", "status": 201, "data": {"url": doc.url}}, status=status.HTTP_201_CREATED)
 
 @api_view(['POST'])
-def docs_contributer(request):
+def docs_contributor(request):
     repo_url = request.data.get('repository_url')
     if repo_url is None:
         return Response({'message': '레포지토리 URL을 입력해 주세요.', 'status': 400}, status=status.HTTP_400_BAD_REQUEST)
