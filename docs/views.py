@@ -11,38 +11,40 @@ import uuid
 
 
 class DocsList(APIView):
-    def get(self, request): # 문서 조회
+    def get(self, request):  # 문서 조회
         docs = Docs.objects.filter(is_deleted=False)  # is_deleted가 False인 객체만 조회
         serializer = DocsSerializer(docs, many=True)
         return Response(serializer.data)
 
-class DocsDetail(APIView): # Docs의 detail을 보여주는 역할
+
+class DocsDetail(APIView):  # Docs의 detail을 보여주는 역할
     def get_object(self, pk):  # Docs 객체 가져오기
         try:
             return Docs.objects.get(pk=pk, is_deleted=False)  # is_deleted가 False인 객체만 조회
         except Docs.DoesNotExist:
             raise Http404
-    def get(self, request, pk): # 문서 상세 조회
+
+    def get(self, request, pk):  # 문서 상세 조회
         doc = self.get_object(pk)
-        serializer =  DocsSerializer(doc)
+        serializer = DocsSerializer(doc)
         return Response(serializer.data)
+
 
 # from django.shortcuts import get_object_or_404, get_list_or_404
 
 
 @api_view(['POST'])
 def docs_create(request):
-
     if request.method == 'POST':
         repository_url = request.data.get('repository_url')
         language = request.data.get('language')
 
         if repository_url is None or language is None or language not in ['KOR', 'ENG']:
-            return Response({"message": "잘못된 요청입니다. 입력 형식을 확인해 주세요.", "status": 400}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "잘못된 요청입니다. 입력 형식을 확인해 주세요.", "status": 400},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         if url_validator(repository_url) is False:
             return Response({"message": "유효하지 않은 URL입니다.", "status": 404}, status=status.HTTP_400_BAD_REQUEST)
-
 
         framework = framework_finder(repository_url)
         # Github, OpenAI API 이용해 Framework 추출
@@ -61,18 +63,37 @@ def docs_create(request):
         # TODO: 찾아낸 Framework를 활용하여 GitHub 코드 추출
         if root_file:
             prompt_ary = get_github_code_prompt(repository_url, framework)
-            response = get_assistant_response(prompt_ary)
+            response, stack, res_title = get_assistant_response(prompt_ary, language)
 
-        return Response({"message": response, "status": 201, "data": {"docs_id": 1}}, status=status.HTTP_201_CREATED)
-        # TODO: 추출한 코드를 활용하여 문서 생성
         request.data['user_id'] = User.objects.filter(id=1).first().id
-        request.data['title'] = "OPGC (Open Source Project's Github Contributions)"
-        request.data['content'] = "OPGC (Open Source Project's Github Contributions)"
+        request.data['title'] = res_title
+        request.data['content'] = response
+        # TODO: Database에 docs 저장 후
         serializer = DocsSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return serializer.response(data=serializer.data)
-        return Response(serializer.errors, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            docs = serializer.save()
+        else:
+            return Response({"message": "문서 생성 실패", "status": 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # TODO: tech_stack에 기술 저장
+        stack_ary = []
+
+        if stack in ',':
+            stack_ary = stack.split(', ')
+        else:
+            stack_ary = stack.split('/')
+
+        res_data = {
+            "docs_id": docs.id,
+            "title": docs.title,
+            "content": docs.content,
+            "language": docs.language,
+            "tech_stack": stack_ary,
+            "created_at": docs.created_at,
+        }
+        return Response({"message": "문서 생성 성공", "status": 201, "data": res_data}, status=status.HTTP_201_CREATED)
+        # TODO: 추출한 코드를 활용하여 문서 생성
+
 
 @api_view(['POST'])
 def docs_share(request):
@@ -96,4 +117,5 @@ def docs_share(request):
         doc.url = unique_url
         doc.save()
 
-        return Response({"message": "문서 공유 URL 생성 성공", "status": 201, "data": {"url": doc.url}}, status=status.HTTP_201_CREATED)
+        return Response({"message": "문서 공유 URL 생성 성공", "status": 201, "data": {"url": doc.url}},
+                        status=status.HTTP_201_CREATED)

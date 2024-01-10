@@ -9,7 +9,8 @@ GITHUB_BEARER_HEADERS = {'Authorization': f'Bearer {GITHUB_TOKEN}'}
 GITHUB_TOKEN_HEADERS = {'Authorization': f'token {GITHUB_TOKEN}'}
 GPT_SECRET_KEY = env('GPT_SECRET_KEY')
 FRAMEWORK_ASSISTANT_ID = env('FRAMEWORK_ASSISTANT_ID')
-CODE_ASSISTANT_ID = env('CODE_ASSISTANT_ID')
+ENG_CODE_ASSISTANT_ID = env('ENG_CODE_ASSISTANT_ID')
+KOR_CODE_ASSISTANT_ID = env('KOR_CODE_ASSISTANT_ID')
 
 
 ignore_file = [
@@ -192,14 +193,18 @@ def get_github_code_prompt(url, framework):
         #     role="user",
         #     content=msg
         # )
-
+        res_ary.append(msg)
     return res_ary
 
 
-def get_assistant_response(prompt_ary):
+def get_assistant_response(prompt_ary, language):
     code_assistant_client = OpenAI(api_key=GPT_SECRET_KEY)
     code_thread = code_assistant_client.beta.threads.create()
     thread_id = code_thread.id
+
+    assistant_id = ENG_CODE_ASSISTANT_ID
+    if language == "KOR":
+        assistant_id = KOR_CODE_ASSISTANT_ID
 
     for prompt in prompt_ary:
         code_assistant_client.beta.threads.messages.create(
@@ -210,7 +215,7 @@ def get_assistant_response(prompt_ary):
 
     run = code_assistant_client.beta.threads.runs.create(
         thread_id=thread_id,
-        assistant_id=CODE_ASSISTANT_ID
+        assistant_id=assistant_id
     )
 
     while run.status != "completed":
@@ -229,4 +234,82 @@ def get_assistant_response(prompt_ary):
         if message.role == 'assistant':
             res_message = message.content
 
-    return res_message[0].text.value
+    res_blog = res_message[0].text.value
+
+    #################################################################################
+    #################################################################################
+    #################################################################################
+    run = code_assistant_client.beta.threads.runs.create(
+        thread_id=thread_id,
+        assistant_id=assistant_id,
+        instructions="""- Style : 정확하게
+- Reader level : 전문가
+- Perspective : 개발자
+- Just tell me the conclusion
+---
+tech stack만 알려줘,
+답변 형식은 각 기술들 사이에 /를 넣어서 알려줘 stack/stack/stack/stack/...
+과 같은 형식처럼"""
+    )
+
+    while run.status != "completed":
+        run = code_assistant_client.beta.threads.runs.retrieve(
+            thread_id=thread_id,
+            run_id=run.id
+        )
+
+    messages = code_assistant_client.beta.threads.messages.list(
+        thread_id=thread_id
+    )
+    res_message = ""
+
+    for message in messages:
+        if message.role == 'assistant':
+            res_message = message.content
+            break
+
+    res_tech_stack = res_message[0].text.value
+    #################################################################
+    #################################################################
+    #################################################################
+
+    if language == "KOR":
+        instructions = """- Style : 정확하게
+- Reader level : 전문가
+- Perspective : 개발자
+- Just tell me the conclusion
+- Answer me in Korean
+---
+블로그 글의 제목을 만들어줘"""
+    elif language == "ENG":
+        instructions = """- Style : 정확하게
+- Reader level : 전문가
+- Perspective : 개발자
+- Just tell me the conclusion
+- Answer me in English
+---
+블로그 글의 제목을 만들어줘 그리고 앞에 제목: 이나 title: 과 같은건 빼줘"""
+    run = code_assistant_client.beta.threads.runs.create(
+        thread_id=thread_id,
+        assistant_id=assistant_id,
+        instructions= instructions
+    )
+
+    while run.status != "completed":
+        run = code_assistant_client.beta.threads.runs.retrieve(
+            thread_id=thread_id,
+            run_id=run.id
+        )
+
+    messages = code_assistant_client.beta.threads.messages.list(
+        thread_id=thread_id
+    )
+    res_message = ""
+
+    for message in messages:
+        if message.role == 'assistant':
+            res_message = message.content
+            break
+
+    res_title = res_message[0].text.value
+    return res_blog, res_tech_stack, res_title
