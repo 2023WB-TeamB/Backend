@@ -10,7 +10,8 @@ import uuid
 
 class DocsList(APIView):
     def get(self, request, *args, **kwargs):  # 문서 조회
-        user_id = request.data.get('user_id')
+        user_id = kwargs['user_id']
+        # user_id = request.data.get('user_id')
 
         if not User.objects.filter(id=user_id).exists():  # user_id가 User 테이블에 존재하지 않는 경우
             return Response({
