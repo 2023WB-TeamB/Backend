@@ -17,16 +17,16 @@ class DocsList(APIView):
 
         if not User.objects.filter(id=user_id).exists():  # user_id가 User 테이블에 존재하지 않는 경우
             return Response({
-                "status": 400,
+                "status": 404,
                 "message": "user_id가 존재하지 않습니다.",
-            }, status=status.HTTP_400_BAD_REQUEST)
+            }, status=status.HTTP_404_NOT_FOUND)
 
         docs = Docs.objects.filter(is_deleted=False, user_id=user_id)  # is_deleted가 False인 객체만 조회
         if not docs:  # 문서가 존재하지 않는 경우
             return Response({
-                "status": 400,
+                "status": 404,
                 "message": "해당 user_id에 해당하는 문서가 존재하지 않습니다.",
-            }, status=status.HTTP_400_BAD_REQUEST)
+            }, status=status.HTTP_404_NOT_FOUND)
 
         serializer = DocsSerializer(docs, many=True)
         docs_data = []
