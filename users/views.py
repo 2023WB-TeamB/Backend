@@ -15,13 +15,14 @@ from django.shortcuts import get_object_or_404
 
 # swagger 관련
 from rest_framework.views import APIView
-from drf_yasg.utils       import swagger_auto_schema
-from drf_yasg             import openapi
+from drf_yasg.utils import swagger_auto_schema
+
+
+# from drf_yasg import openapi
 
 
 class RegisterAPIView(APIView):
-    task_id = openapi.Parameter('task_id', openapi.IN_PATH, description='task_id path', required=True, type=openapi.TYPE_NUMBER)
-    @swagger_auto_schema(tags=['USER'], manual_parameters=[task_id], responses={200: 'Success'})
+    @swagger_auto_schema(request_body=SwaggerRegisterPostSerializer)
     # 회원가입
     def post(self, request):
         serializer = UserSerializer(data=request.data)
@@ -61,22 +62,19 @@ class RegisterAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# class UserViewset(viewsets.ModelViewSet):
-#     permission_classes = [IsAuthenticated]
-#     queryset = User.objects.all()
-#     serializer_class = SignSerializer
-#
-#     def update(self, request, *args, **kwargs):
-#         kwargs['partial'] = True
-#         return super().update(request, *args, **kwargs)
+    # class UserViewset(viewsets.ModelViewSet):
+    #     permission_classes = [IsAuthenticated]
+    #     queryset = User.objects.all()
+    #     serializer_class = SignSerializer
+    #
+    #     def update(self, request, *args, **kwargs):
+    #         kwargs['partial'] = True
+    #         return super().update(request, *args, **kwargs)
 
 
-
+@swagger_auto_schema(request_body=SwaggerLoginPostSerializer)
 class AuthAPIView(APIView):
-    task_id = openapi.Parameter('task_id', openapi.IN_PATH, description='task_id path', required=True,
-                                type=openapi.TYPE_NUMBER)
 
-    @swagger_auto_schema(tags=['USER'], manual_parameters=[task_id], responses={200: 'Success'})
     # 유저 정보 확인
     def get(self, request):
         try:
@@ -111,9 +109,7 @@ class AuthAPIView(APIView):
             # 사용 불가능한 토큰
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-
-
-    @swagger_auto_schema(tags=['USER'], manual_parameters=[task_id], responses={200: 'Success'})
+    @swagger_auto_schema(request_body=SwaggerLoginPostSerializer)
     # 로그인
     def post(self, request):
         # 유저 인증
@@ -128,7 +124,7 @@ class AuthAPIView(APIView):
             access_token = str(token.access_token)
             res = Response(
                 {
-                    "user": serializer.data,
+                    # "user": serializer.data,
                     "message": "login success",
                     "token": {
                         "access": access_token,
@@ -144,8 +140,6 @@ class AuthAPIView(APIView):
         else:
             return Response({'message': 'Invalid email or password.'}, status=status.HTTP_400_BAD_REQUEST)
 
-
-    @swagger_auto_schema(tags=['USER'], manual_parameters=[task_id], responses={200: 'Success'})
     # 로그아웃
     def delete(self, request):
         # 쿠키에 저장된 토큰 삭제
@@ -155,4 +149,3 @@ class AuthAPIView(APIView):
         response.delete_cookie("access")
         response.delete_cookie("refresh")
         return response
-
