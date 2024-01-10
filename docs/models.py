@@ -14,6 +14,7 @@ class Docs(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
     is_deleted = models.BooleanField(default=False)
+    tech_stack = models.CharField(max_length=255)
 
     def __str__(self):
         return self.title
