@@ -43,9 +43,28 @@ def docs_create(request):
         if url_validator(repository_url) is False:
             return Response({"message": "유효하지 않은 URL입니다.", "status": 404}, status=status.HTTP_400_BAD_REQUEST)
 
-        # TODO: Github API 이용해 Framework 추출
-        return Response({"message": framework_finder(repository_url), "status": 201, "data": {"docs_id": 1}}, status=status.HTTP_201_CREATED)
-        # TODO: GitHub API 이용해 세부 코드 추출
+
+        framework = framework_finder(repository_url)
+        # Github, OpenAI API 이용해 Framework 추출
+        # return Response({"message": framework, "status": 201, "data": {"docs_id": 1}}, status=status.HTTP_201_CREATED)
+
+        ####################################################
+        if repository_url.startswith("https://"):
+            repository_url = repository_url.replace("https://", "")
+
+        repo_url_list = repository_url.split("/")
+        owner = repo_url_list[1]
+        repo = repo_url_list[2].split(".")[0]
+        path = ''
+        root_file = get_file_content(owner, repo, path)
+
+        # TODO: 찾아낸 Framework를 활용하여 GitHub 코드 추출
+        if root_file:
+            prompt_ary = get_github_code_prompt(repository_url, framework)
+            response = get_assistant_response(prompt_ary)
+
+        return Response({"message": response, "status": 201, "data": {"docs_id": 1}}, status=status.HTTP_201_CREATED)
+        # TODO: 추출한 코드를 활용하여 문서 생성
         request.data['user_id'] = User.objects.filter(id=1).first().id
         request.data['title'] = "OPGC (Open Source Project's Github Contributions)"
         request.data['content'] = "OPGC (Open Source Project's Github Contributions)"
