@@ -1,6 +1,5 @@
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
 # Create your views here.
 import jwt
 
@@ -14,8 +13,17 @@ from rest_framework.response import Response
 from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
 
+# swagger 관련
+from rest_framework.views import APIView
+from drf_yasg.utils import swagger_auto_schema
+
+
+# from drf_yasg import openapi
+
 
 class RegisterAPIView(APIView):
+    @swagger_auto_schema(request_body=SwaggerRegisterPostSerializer)
+    # 회원가입
     def post(self, request):
         serializer = UserSerializer(data=request.data)
 
@@ -54,17 +62,19 @@ class RegisterAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# class UserViewset(viewsets.ModelViewSet):
-#     permission_classes = [IsAuthenticated]
-#     queryset = User.objects.all()
-#     serializer_class = SignSerializer
-#
-#     def update(self, request, *args, **kwargs):
-#         kwargs['partial'] = True
-#         return super().update(request, *args, **kwargs)
+    # class UserViewset(viewsets.ModelViewSet):
+    #     permission_classes = [IsAuthenticated]
+    #     queryset = User.objects.all()
+    #     serializer_class = SignSerializer
+    #
+    #     def update(self, request, *args, **kwargs):
+    #         kwargs['partial'] = True
+    #         return super().update(request, *args, **kwargs)
 
 
+@swagger_auto_schema(request_body=SwaggerLoginPostSerializer)
 class AuthAPIView(APIView):
+
     # 유저 정보 확인
     def get(self, request):
         try:
@@ -76,8 +86,10 @@ class AuthAPIView(APIView):
             serializer = SignSerializer(instance=user)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
+
         except(jwt.exceptions.ExpiredSignatureError):
             # 토큰 만료 시 토큰 갱신
+
             data = {'refresh': request.COOKIES.get('refresh', None)}
             serializer = TokenRefreshSerializer(data=data)
             if serializer.is_valid(raise_exception=True):
@@ -97,6 +109,7 @@ class AuthAPIView(APIView):
             # 사용 불가능한 토큰
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
+    @swagger_auto_schema(request_body=SwaggerLoginPostSerializer)
     # 로그인
     def post(self, request):
         # 유저 인증
@@ -111,7 +124,7 @@ class AuthAPIView(APIView):
             access_token = str(token.access_token)
             res = Response(
                 {
-                    "user": serializer.data,
+                    # "user": serializer.data,
                     "message": "login success",
                     "token": {
                         "access": access_token,
@@ -136,4 +149,3 @@ class AuthAPIView(APIView):
         response.delete_cookie("access")
         response.delete_cookie("refresh")
         return response
-

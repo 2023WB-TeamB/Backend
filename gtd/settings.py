@@ -106,6 +106,22 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
 
+# swagger
+SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH': False,
+    'SECURITY_DEFINITIONS': {
+        'BearerAuth': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header',
+            'description': "JWT Token"
+        }
+    },
+    'SECURITY_REQUIREMENTS': [{
+        'BearerAuth': []
+    }]
+}
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -115,7 +131,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
-    'corsheaders.middleware.CorsMiddleware', # cors 설정, 상단에 추가
+    'corsheaders.middleware.CorsMiddleware',  # cors 설정, 상단에 추가
 ]
 
 ROOT_URLCONF = 'gtd.urls'
@@ -196,11 +212,10 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
 # CORS 설정 - whitelist 에 추가된 주소 접근 허용
 CORS_ORIGIN_WHITELIST = ['http://127.0.0.1:5173', 'http://localhost:5173', 'http://0.0.0.0:5173',
                          'http://127.0.0.1:8000', 'http://localhost:8000', 'http://0.0.0.0:8000',
-                         'http://localhost', 'http://0.0.0.0', 'http://127.0.0.1',]
+                         'http://localhost', 'http://0.0.0.0', 'http://127.0.0.1', ]
 
 # CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
@@ -213,4 +228,3 @@ CORS_ALLOW_METHODS = (
     'POST',
     'PUT',
 )
-

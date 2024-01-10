@@ -1,5 +1,3 @@
-from django.http import Http404
-from django.urls import is_valid_path
 from rest_framework.views import APIView
 from .models import Docs, User
 from .serializers import DocsSerializer
@@ -10,11 +8,42 @@ from .github import *
 import uuid
 
 
+
 class DocsList(APIView):
-    def get(self, request):  # 문서 조회
-        docs = Docs.objects.filter(is_deleted=False)  # is_deleted가 False인 객체만 조회
+
+    def get(self, request, *args, **kwargs):  # 문서 조회
+        user_id = kwargs['user_id']
+        # user_id = request.data.get('user_id')
+
+        if not User.objects.filter(id=user_id).exists():  # user_id가 User 테이블에 존재하지 않는 경우
+            return Response({
+                "status": 404,
+                "message": "user_id가 존재하지 않습니다.",
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        docs = Docs.objects.filter(is_deleted=False, user_id=user_id)  # is_deleted가 False인 객체만 조회
+        if not docs:  # 문서가 존재하지 않는 경우
+            return Response({
+                "status": 404,
+                "message": "해당 user_id에 해당하는 문서가 존재하지 않습니다.",
+            }, status=status.HTTP_404_NOT_FOUND)
         serializer = DocsSerializer(docs, many=True)
-        return Response(serializer.data)
+        docs_data = []
+        for item in serializer.data:
+            docs_data.append({
+                "id": item['id'],
+                "title": item['title']
+            })
+        response_data = {
+            "status": 200,
+            "message": '문서 조회 성공',
+            "data": {
+                "docs": docs_data
+            }
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
+
+# class DocsDetail(APIView): # Docs의 detail을 보여주는 역할
 
 
 class DocsDetail(APIView):  # Docs의 detail을 보여주는 역할
@@ -109,7 +138,7 @@ def docs_share(request):
             return Response({"message": "존재하지 않는 문서 ID입니다.", "status": 404}, status=status.HTTP_404_NOT_FOUND)
 
         if doc.url is not None:
-            return Response({"message": "이미 URL이 생성된 문서입니다.", "status": 409}, status=status.HTTP_409_CONFLICT)
+            return Response({"message": "이미 URL이 생성된 문서입니다.", "status": 409, "existing_url": doc.url}, status=status.HTTP_409_CONFLICT)
 
         # UUID를 사용하여 고유한 URL 생성
         base_url = 'http://127.0.0.1:8000/api/v1/docs/share/'
