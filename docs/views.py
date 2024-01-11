@@ -5,6 +5,9 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
 import uuid
+import requests
+import json
+import environ
 
 
 
@@ -160,3 +163,29 @@ def docs_share(request):
         doc.save()
 
         return Response({"message": "문서 공유 URL 생성 성공", "status": 201, "data": {"url": doc.url}}, status=status.HTTP_201_CREATED)
+
+@api_view(['POST'])
+def docs_contributor(request):
+    repo_url = request.data.get('repository_url')
+    if repo_url is None:
+        return Response({'message': '레포지토리 URL을 입력해 주세요.', 'status': 400}, status=status.HTTP_400_BAD_REQUEST)
+    env = environ.Env(DEBUG=(bool, True))
+    GITHUB_TOKEN = env('GITHUB_TOKEN')
+    headers = {'Authorization': 'token ' + GITHUB_TOKEN}
+    repo_name = repo_url.split("github.com/")[1]
+    repository_url = f"https://api.github.com/repos/{repo_name}/contributors"
+    response = requests.get(repository_url, headers=headers)
+    if response.status_code == 200:
+        contributors = json.loads(response.text)
+        total_contributions = sum([contributor['contributions'] for contributor in contributors])
+        result = []
+        for contributor in contributors:
+            contribution_percent = '{:.2f}%'.format((contributor['contributions'] / total_contributions) * 100)  # 소수점 두 자리까지 표시하고 '%'를 붙입니다.
+            result.append({
+                'contributor': contributor['login'],
+                'contributions': contributor['contributions'],
+                'contribution_percent': contribution_percent
+            })
+        return Response({'message': '컨트리뷰터 생성 성공', 'status': 201, 'data': result}, status=status.HTTP_201_CREATED)
+    else:
+        return Response({'message': '레포지토리를 찾을 수 없습니다.', 'status': 404}, status=status.HTTP_404_NOT_FOUND)
