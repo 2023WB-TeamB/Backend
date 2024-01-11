@@ -4,7 +4,6 @@ from rest_framework.response import Response
 from rest_framework import status
 
 
-
 class DocsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Docs
@@ -30,10 +29,10 @@ class DocsSerializer(serializers.ModelSerializer):
         doc = Docs.objects.get(pk=docs_id)
 
         response_data = {
-            "message" : "문서 공유 URL 생성 성공",
-            "status" : 201,
+            "message": "문서 공유 URL 생성 성공",
+            "status": 201,
             "data": {
-            "share_url" : doc.url,
+                "share_url": doc.url,
             }
         }
         return Response(response_data, status=status.HTTP_201_CREATED)
