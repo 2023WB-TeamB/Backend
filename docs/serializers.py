@@ -36,3 +36,8 @@ class DocsSerializer(serializers.ModelSerializer):
             }
         }
         return Response(response_data, status=status.HTTP_201_CREATED)
+
+
+class SwaggerDocsPostSerializer(serializers.Serializer):
+    repository_url = serializers.CharField()
+    language = serializers.CharField()
