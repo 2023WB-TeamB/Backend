@@ -11,6 +11,7 @@ class Docs(models.Model):
     repository_url = models.URLField(max_length=1000)
     url = models.URLField(max_length=1000, null=True)
     language = models.CharField(max_length=30)
+    color = models.CharField(max_length=7)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
     is_deleted = models.BooleanField(default=False)
