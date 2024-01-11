@@ -21,3 +21,44 @@ services:
       - 8000:8000
     expose:
       - 8000
+    # command 입력 종료 후 서버가 꺼지는것을 방지
+    tty: true
+    networks:
+      - gtd
+
+  rabbitmq:
+    hostname: gtdhost
+    container_name: rabbitmq
+    image: rabbitmq:3-management
+    command: rabbitmq-server
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    ports:
+      - 5672:5672 # Default Port
+      - 15672:15672 # For UI
+    volumes:
+      - .:/backend
+    depends_on:
+      - backend
+    networks:
+      - gtd
+
+  celery_worker:
+    container_name: celery_worker
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: "celery -A gtd.celery worker --loglevel=info --pool=gevent --concurrency=12"
+    depends_on:
+      - rabbitmq
+      - backend
+    volumes:
+      - .:/backend
+    networks:
+      - gtd
+
+networks:
+  gtd:
+    driver: bridge
