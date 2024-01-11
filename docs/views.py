@@ -1,3 +1,5 @@
+import time
+
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
@@ -8,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
 from .github import *
+from .AiTask import *
 import uuid
 import requests
 import json
@@ -90,10 +93,18 @@ class DocsCreateView(APIView):
         if url_validator(repository_url) is False:
             return Response({"message": "유효하지 않은 URL입니다.", "status": 404}, status=status.HTTP_400_BAD_REQUEST)
 
-        framework = framework_finder(repository_url)
-        # Github, OpenAI API 이용해 Framework 추출
-        # return Response({"message": framework, "status": 201, "data": {"docs_id": 1}}, status=status.HTTP_201_CREATED)
+        framework = framework_finder_task.delay(repository_url)
 
+        while True:
+            if framework.ready():
+                break
+            time.sleep(1)
+
+        if framework.result:
+            framework = framework.result
+        else:
+            return Response({"message": "framework 추출 실패", "status": 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
         ####################################################
         if repository_url.startswith("https://"):
             repository_url = repository_url.replace("https://", "")
@@ -107,7 +118,20 @@ class DocsCreateView(APIView):
         # TODO: 찾아낸 Framework를 활용하여 GitHub 코드 추출
         if root_file:
             prompt_ary = get_github_code_prompt(repository_url, framework)
-            response, stack, res_title = get_assistant_response(prompt_ary, language)
+
+            res_data = get_assistant_response_task.delay(prompt_ary, language)
+
+        while True:
+            if res_data.ready():
+                break
+            time.sleep(1)
+
+        if res_data.result:
+            response = res_data.result['response']
+            stack = res_data.result['stack']
+            res_title = res_data.result['res_title']
+        else:
+            return Response({"message": "문서 생성 실패", "status": 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         request.data['user_id'] = User.objects.filter(id=user_id).first().id
         request.data['title'] = res_title
