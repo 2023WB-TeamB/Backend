@@ -1,11 +1,18 @@
+from tech_stack.models import TechStack
 from .models import Docs
 from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework import status
 
 
+class TechSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TechStack
+        fields = ('name',)
+
 
 class DocsSerializer(serializers.ModelSerializer):
+    tech_stack = TechSerializer(many=True,read_only=True)
     class Meta:
         model = Docs
         fields = '__all__'
@@ -37,3 +44,4 @@ class DocsSerializer(serializers.ModelSerializer):
             }
         }
         return Response(response_data, status=status.HTTP_201_CREATED)
+

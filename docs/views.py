@@ -11,7 +11,6 @@ import uuid
 class DocsList(APIView):
     def get(self, request, *args, **kwargs):  # 문서 조회
         user_id = kwargs['user_id']
-        # user_id = request.data.get('user_id')
 
         if not User.objects.filter(id=user_id).exists():  # user_id가 User 테이블에 존재하지 않는 경우
             return Response({
@@ -32,7 +31,7 @@ class DocsList(APIView):
             docs_data.append({
                 "id": item['id'],
                 "title": item['title'],
-                "tech_stack": item['tech_stack'],
+                "tech_stack": item.get('tech_stack', None), # 'tech_stack'라는 키로 item 딕셔너리에서 값을 찾아 반환하되, 만약 'tech_stack'라는 키가 없다면 None을 반환
                 "created_at": item['created_at'],
                 "updated_at": item['updated_at'],
             })
@@ -46,9 +45,6 @@ class DocsList(APIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 # class DocsDetail(APIView): # Docs의 detail을 보여주는 역할
-
-
-
 
 
 @api_view(['POST'])
@@ -68,6 +64,7 @@ def docs_create(request):
 OPGC 프로젝트는 Github 프로필을 분석하여 사용자의 기여를 추적하고 랭킹을 매기는 서비스입니다.
 
 ### 기술스택
+
 
 - Framework: Django REST framework
 - Django, Django REST framework
