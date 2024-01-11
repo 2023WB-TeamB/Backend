@@ -47,7 +47,11 @@ class DocsList(APIView):
         for item in serializer.data:
             docs_data.append({
                 "id": item['id'],
-                "title": item['title']
+                "title": item['title'],
+                "color": item['color'],
+                "tech_stack": ["Spring Boot", "React", "MySQL", "Nginx", "React Query"],
+                "created_at": item['created_at'],
+                "updated_at": item['updated_at']
             })
         response_data = {
             "status": 200,
