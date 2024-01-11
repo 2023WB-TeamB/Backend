@@ -1,6 +1,9 @@
+import time
+
 from rest_framework.views import APIView
 from .models import Docs, User
 from .serializers import DocsSerializer
+from .AiTask import *
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
@@ -134,10 +137,18 @@ OPGC 프로젝트는 다음과 같은 기능을 제공합니다.
 
 위와 같은 기능들은 Django REST framework를 사용하여 구현되었으며, 캐싱을 위해 cacheops를, 에러 로깅을 위해 sentry-sdk를 사용하고 있습니다. 또한, front-end와 연계하여 쉽게 사용할 수 있도록 API를 제공하고 있습니다."""
 
-        serializer = DocsSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return serializer.response(data=serializer.data)
+        # serializer = DocsSerializer(data=request.data)
+        delay = delayed_task.delay()
+        # if serializer.is_valid():
+        #     serializer.save()
+        while True:
+            if delay.ready():
+                break
+            time.sleep(1)
+        if delay.result:
+            return Response({"message": "문서 생성 성공", "status": 201, "data": delay.result}, status=status.HTTP_201_CREATED)
+
+            # return serializer.response(data=serializer.data)
         return Response(serializer.errors, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['POST'])
