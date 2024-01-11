@@ -1,4 +1,7 @@
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
+
+from users.utils import user_token_to_data
 from .models import Docs, User
 from .serializers import DocsSerializer
 from rest_framework.response import Response
@@ -9,12 +12,22 @@ import requests
 import json
 import environ
 
+# swagger 관련
+from rest_framework.views import APIView
+from drf_yasg.utils import swagger_auto_schema, no_body
 
 
+@swagger_auto_schema(request_body=no_body)
 class DocsList(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, *args, **kwargs):  # 문서 조회
-        user_id = kwargs['user_id']
-        # user_id = request.data.get('user_id')
+        authorization_header = request.META.get('HTTP_AUTHORIZATION')
+        if authorization_header and authorization_header.startswith('Bearer '):
+            token = authorization_header.split(' ')[1]
+            user_id = user_token_to_data(token)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
         if not User.objects.filter(id=user_id).exists():  # user_id가 User 테이블에 존재하지 않는 경우
             return Response({
@@ -45,21 +58,19 @@ class DocsList(APIView):
         }
         return Response(response_data, status=status.HTTP_200_OK)
 
+
 # class DocsDetail(APIView): # Docs의 detail을 보여주는 역할
-
-
-
 
 
 @api_view(['POST'])
 def docs_create(request):
-
     if request.method == 'POST':
         repository_url = request.data.get('repository_url')
         language = request.data.get('language')
 
         if repository_url is None or language is None or language not in ['KOR', 'ENG']:
-            return Response({"message": "잘못된 요청입니다. 입력 형식을 확인해 주세요.", "status": 400}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "잘못된 요청입니다. 입력 형식을 확인해 주세요.", "status": 400},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         request.data['user_id'] = User.objects.filter(id=1).first().id
         request.data['title'] = "OPGC (Open Source Project's Github Contributions)"
@@ -140,6 +151,7 @@ OPGC 프로젝트는 다음과 같은 기능을 제공합니다.
             return serializer.response(data=serializer.data)
         return Response(serializer.errors, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
 @api_view(['POST'])
 def docs_share(request):
     if request.method == 'POST':
@@ -154,7 +166,8 @@ def docs_share(request):
             return Response({"message": "존재하지 않는 문서 ID입니다.", "status": 404}, status=status.HTTP_404_NOT_FOUND)
 
         if doc.url is not None:
-            return Response({"message": "이미 URL이 생성된 문서입니다.", "status": 409, "existing_url": doc.url}, status=status.HTTP_409_CONFLICT)
+            return Response({"message": "이미 URL이 생성된 문서입니다.", "status": 409, "existing_url": doc.url},
+                            status=status.HTTP_409_CONFLICT)
 
         # UUID를 사용하여 고유한 URL 생성
         base_url = 'http://127.0.0.1:8000/api/v1/docs/share/'
@@ -162,7 +175,9 @@ def docs_share(request):
         doc.url = unique_url
         doc.save()
 
-        return Response({"message": "문서 공유 URL 생성 성공", "status": 201, "data": {"url": doc.url}}, status=status.HTTP_201_CREATED)
+        return Response({"message": "문서 공유 URL 생성 성공", "status": 201, "data": {"url": doc.url}},
+                        status=status.HTTP_201_CREATED)
+
 
 @api_view(['POST'])
 def docs_contributor(request):
@@ -180,7 +195,8 @@ def docs_contributor(request):
         total_contributions = sum([contributor['contributions'] for contributor in contributors])
         result = []
         for contributor in contributors:
-            contribution_percent = '{:.2f}%'.format((contributor['contributions'] / total_contributions) * 100)  # 소수점 두 자리까지 표시하고 '%'를 붙입니다.
+            contribution_percent = '{:.2f}%'.format(
+                (contributor['contributions'] / total_contributions) * 100)  # 소수점 두 자리까지 표시하고 '%'를 붙입니다.
             result.append({
                 'contributor': contributor['login'],
                 'contributions': contributor['contributions'],
