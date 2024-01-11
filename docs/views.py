@@ -7,6 +7,7 @@ from rest_framework import status
 import uuid
 import requests
 import json
+import environ
 
 
 
@@ -168,8 +169,9 @@ def docs_contributor(request):
     repo_url = request.data.get('repository_url')
     if repo_url is None:
         return Response({'message': '레포지토리 URL을 입력해 주세요.', 'status': 400}, status=status.HTTP_400_BAD_REQUEST)
-    token = "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"  # 이 부분을 환경 변수 등을 이용하여 안전하게 관리하는 것이 좋습니다.
-    headers = {'Authorization': 'token ' + token}
+    env = environ.Env(DEBUG=(bool, True))
+    GITHUB_TOKEN = env('GITHUB_TOKEN')
+    headers = {'Authorization': 'token ' + GITHUB_TOKEN}
     repo_name = repo_url.split("github.com/")[1]
     repository_url = f"https://api.github.com/repos/{repo_name}/contributors"
     response = requests.get(repository_url, headers=headers)
