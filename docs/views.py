@@ -87,31 +87,33 @@ OPGC 프로젝트는 Github 프로필을 분석하여 사용자의 기여를 추
         return Response(serializer.errors, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@api_view(['POST'])
-def docs_share(request):
-    if request.method == 'POST':
-        docs_id = request.data.get('docs_id')
+class DocsShareView(APIView):
+    permission_classes = [IsAuthenticated]
+    @swagger_auto_schema(request_body=SwaggerDocsSharePostSerializer)
+    def post(self, request, *args, **kwargs):
+        if request.method == 'POST':
+            docs_id = request.data.get('docs_id')
 
-        if docs_id is None:
-            return Response({"message": "문서 ID를 입력해 주세요.", "status": 400}, status=status.HTTP_400_BAD_REQUEST)
+            if docs_id is None:
+                return Response({"message": "문서 ID를 입력해 주세요.", "status": 400}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            doc = Docs.objects.get(pk=docs_id)
-        except Docs.DoesNotExist:
-            return Response({"message": "존재하지 않는 문서 ID입니다.", "status": 404}, status=status.HTTP_404_NOT_FOUND)
+            try:
+                doc = Docs.objects.get(pk=docs_id)
+            except Docs.DoesNotExist:
+                return Response({"message": "존재하지 않는 문서 ID입니다.", "status": 404}, status=status.HTTP_404_NOT_FOUND)
 
-        if doc.url is not None:
-            return Response({"message": "이미 URL이 생성된 문서입니다.", "status": 409, "existing_url": doc.url},
-                            status=status.HTTP_409_CONFLICT)
+            if doc.url is not None:
+                return Response({"message": "이미 URL이 생성된 문서입니다.", "status": 409, "existing_url": doc.url},
+                                status=status.HTTP_409_CONFLICT)
 
-        # UID를 사용하여 고유한 URL 생성
-        base_url = 'http://127.0.0.1:8000/api/v1/docs/share/'
-        unique_url = base_url + str(uuid.uuid4())
-        doc.url = unique_url
-        doc.save()
+            # UID를 사용하여 고유한 URL 생성
+            base_url = 'http://127.0.0.1:8000/api/v1/docs/share/'
+            unique_url = base_url + str(uuid.uuid4())
+            doc.url = unique_url
+            doc.save()
 
-        return Response({"message": "문서 공유 URL 생성 성공", "status": 201, "data": {"url": doc.url}},
-                        status=status.HTTP_201_CREATED)
+            return Response({"message": "문서 공유 URL 생성 성공", "status": 201, "data": {"url": doc.url}},
+                            status=status.HTTP_201_CREATED)
 
 
 @api_view(['POST'])

@@ -41,3 +41,6 @@ class DocsSerializer(serializers.ModelSerializer):
 class SwaggerDocsPostSerializer(serializers.Serializer):
     repository_url = serializers.CharField()
     language = serializers.CharField()
+
+class SwaggerDocsSharePostSerializer(serializers.Serializer):
+    docs_id = serializers.IntegerField()
