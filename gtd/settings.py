@@ -58,6 +58,7 @@ INSTALLED_APPS = [
 
     'users',
     'docs',
+    'tech_stack',
 ]
 
 # jwt 토큰은 simplejwt의 JWTAuthentication으로 인증한다.
