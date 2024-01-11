@@ -71,11 +71,26 @@ class DocsCreateView(APIView):
         language = request.data.get('language')
         color = request.data.get('color')
 
+        authorization_header = request.META.get('HTTP_AUTHORIZATION')
+        if authorization_header and authorization_header.startswith('Bearer '):
+            token = authorization_header.split(' ')[1]
+            user_id = user_token_to_data(token)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        if not User.objects.filter(id=user_id).exists():  # user_id가 User 테이블에 존재하지 않는 경우
+            return Response({
+                "status": 404,
+                "message": "user_id가 존재하지 않습니다.",
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        docs = Docs.objects.filter(is_deleted=False, user_id=user_id)  # is_deleted가 False인 객체만 조회
+
         if repository_url is None or language is None or language not in ['KOR', 'ENG'] or color is None:
             return Response({"message": "잘못된 요청입니다. 입력 형식을 확인해 주세요.", "status": 400},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        request.data['user_id'] = User.objects.filter(id=1).first().id
+        request.data['user_id'] = User.objects.filter(id=user_id).first().id
         request.data['title'] = "OPGC (Open Source Project's Github Contributions)"
         request.data['content'] = """## 프로젝트 소개
 
