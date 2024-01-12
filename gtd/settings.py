@@ -58,6 +58,7 @@ INSTALLED_APPS = [
 
     'users',
     'docs',
+    'badge',
 
     'django_celery_beat', # celery
     'django_celery_results',
