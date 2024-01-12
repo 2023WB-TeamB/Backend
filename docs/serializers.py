@@ -37,6 +37,28 @@ class DocsSerializer(serializers.ModelSerializer):
         }
         return Response(response_data, status=status.HTTP_201_CREATED)
 
+    def docs_detail(self, data):
+        docs_data = []
+        for item in data:
+            docs_data.append({
+                "id": item['id'],
+                "title": item['title'],
+                "content": item['content'],
+                "repository_url": item['repository_url'],
+                "url": item['url'],
+                "language": item['language'],
+                "created_at": item['created_at'],
+                "updated_at": item['updated_at'],
+                "color": item['color']
+            })
+        response_data = {
+            "status": 200,
+            "message": '문서 상세 조회 성공',
+            "data": {
+                "docs": docs_data
+            }
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
 
 class SwaggerDocsPostSerializer(serializers.Serializer):
     repository_url = serializers.CharField()

@@ -1,5 +1,6 @@
 import time
 
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
@@ -64,6 +65,33 @@ class DocsList(APIView):
             }
         }
         return Response(response_data, status=status.HTTP_200_OK)
+
+@swagger_auto_schema(request_body=no_body)
+class DocsDetail(APIView): # Docs의 detail을 보여주는 역할
+    permission_classes = [IsAuthenticated]
+    def get(self, request, *args, **kwargs):  # 문서 상세 조회, get() 메소드에서 URL의 경로 인자를 가져오려면 self.kwargs를 사용해야함.
+        authorization_header = request.META.get('HTTP_AUTHORIZATION')
+        if authorization_header and authorization_header.startswith('Bearer '):
+            token = authorization_header.split(' ')[1]
+            user_id = user_token_to_data(token)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        docs_id = self.kwargs.get("pk")
+        if docs_id is None: # URL에서 pk를 제대로 가져오지 못한 경우
+            return Response({
+                "status": 404,
+                "message": "해당 id를 가진 문서를 찾을 수 없습니다.",
+            }, status=status.HTTP_404_NOT_FOUND)
+        try:
+            docs = Docs.objects.get(is_deleted=False, pk=docs_id)  # is_deleted가 False인 객체만 조회
+        except ObjectDoesNotExist: # 데이터베이스에서 문서를 찾는 도중 에러가 발생한 경우
+            return Response({
+                "status": 404,
+                "message": "해당 id의 문서를 찾을 수 없습니다.",
+            }, status=status.HTTP_404_NOT_FOUND)
+        serializer = DocsSerializer(docs) #get 메소드에서 docs_detail 함수를 직접 호출하여 serializer.data를 처리.
+        return serializer.docs_detail([serializer.data]) # docs_detail 메소드가 리스트를 인자로 받음.
 
 class DocsCreateView(APIView):
     permission_classes = [IsAuthenticated]
