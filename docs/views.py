@@ -65,8 +65,10 @@ class DocsList(APIView):
         }
         return Response(response_data, status=status.HTTP_200_OK)
 
+
 class DocsCreateView(APIView):
     permission_classes = [IsAuthenticated]
+
     @swagger_auto_schema(request_body=SwaggerDocsPostSerializer)
     def post(self, request, *args, **kwargs):
         repository_url = request.data.get('repository_url')
@@ -104,7 +106,7 @@ class DocsCreateView(APIView):
             framework = framework.result
         else:
             return Response({"message": "framework 추출 실패", "status": 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+
         ####################################################
         if repository_url.startswith("https://"):
             repository_url = repository_url.replace("https://", "")
@@ -166,9 +168,9 @@ class DocsCreateView(APIView):
         # TODO: 추출한 코드를 활용하여 문서 생성
 
 
-
 class DocsShareView(APIView):
     permission_classes = [IsAuthenticated]
+
     @swagger_auto_schema(request_body=SwaggerDocsSharePostSerializer)
     def post(self, request, *args, **kwargs):
         if request.method == 'POST':
@@ -199,31 +201,43 @@ class DocsContributorView(APIView):
 
     @swagger_auto_schema(request_body=SwaggerDocsContributorPostSerializer)
     def post(self, request, *args, **kwargs):
-        repo_url = request.data.get('repository_url')
+        docs_id = request.data.get('docs_id')
 
-        if repo_url is None:
-            return Response({'message': '레포지토리 URL을 입력해 주세요.', 'status': 400}, status=status.HTTP_400_BAD_REQUEST)
+        if docs_id is None:
+            return Response({'message': '문서 ID를 입력해 주세요.', 'status': 400}, status=status.HTTP_400_BAD_REQUEST)
+
+        # docs 테이블에서 id로 repository_url 가져오기
+        try:
+            docs = Docs.objects.get(id=docs_id)
+            repo_url = docs.repository_url
+        except Docs.DoesNotExist:
+            return Response({'message': '문서를 찾을 수 없습니다.', 'status': 404}, status=status.HTTP_404_NOT_FOUND)
 
         env = environ.Env(DEBUG=(bool, True))
         GITHUB_TOKEN = env('GITHUB_TOKEN')
         headers = {'Authorization': 'token ' + GITHUB_TOKEN}
         repo_name = repo_url.split("github.com/")[1]
         repository_url = f"https://api.github.com/repos/{repo_name}/contributors"
+        pr_url = f"https://api.github.com/repos/{repo_name}/pulls?state=all"
 
         response = requests.get(repository_url, headers=headers)
+        pr_response = requests.get(pr_url, headers=headers)
 
-        if response.status_code == 200:
+        if response.status_code == 200 and pr_response.status_code == 200:
             contributors = json.loads(response.text)
+            prs = json.loads(pr_response.text)
             total_contributions = sum([contributor['contributions'] for contributor in contributors])
             result = []
 
             for contributor in contributors:
+                user_prs = [pr for pr in prs if pr['user']['login'] == contributor['login']]
                 contribution_percent = '{:.2f}%'.format(
                     (contributor['contributions'] / total_contributions) * 100)
                 result.append({
                     'contributor': contributor['login'],
-                    'contributions': contributor['contributions'],
-                    'contribution_percent': contribution_percent
+                    'commit_count': contributor['contributions'],
+                    'contribution_percent': contribution_percent,
+                    'pr_count': len(user_prs),
                 })
 
             return Response({'message': '컨트리뷰터 생성 성공', 'status': 201, 'data': result}, status=status.HTTP_201_CREATED)
