@@ -10,7 +10,7 @@ from .models import Badge
 
 
 class BadgeView(APIView):
-    def get(self, request, github_user, repo_name, *args, **kwargs):
+    def get(self, request, github_user_organization, repo_name, github_user, *args, **kwargs):
 
         # TODO: github_user, repo_name 으로 문서화된 레포지토리가 있는지 확인
         # TODO: ! Docs ID 검색 후 badge filter까지 하면 로직이 하나 늘어나는거기 때문에 바로 badge filter로 검색
