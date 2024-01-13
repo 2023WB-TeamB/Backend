@@ -34,7 +34,9 @@ class BadgeView(APIView):
         # TODO: ! 닉네임을 변경한 경우? 어떻게 처리할지 고민할 것
         # TODO: ! 만약 이미 뱃지를 사용하던 유저가 문서화를 진행할 경우? -> 문서화 진행 시 뱃지 생성 -> 뱃지 업데이트
 
-        repository_url = "https://github.com/" + github_user + "/" + repo_name
+        env = environ.Env(DEBUG=(bool, True))
+        GITHUB_TOKEN = env('GITHUB_TOKEN')
+        headers = {'Authorization': 'token ' + GITHUB_TOKEN}
         # 뱃지에 등록된 데이터가 있는 경우
         if Badge.objects.filter(github_id=github_user, repository_url=repository_url).exists():
             badge = Badge.objects.get(github_id=github_user, repository_url=repository_url)
