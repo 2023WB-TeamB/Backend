@@ -8,7 +8,7 @@ class Badge(models.Model):
     github_id = models.CharField(max_length=255)
     commit_cnt = models.IntegerField()
     pull_request_cnt = models.IntegerField()
-    contribution = models.IntegerField()
+    contribution = models.FloatField()
     repository_url = models.URLField(max_length=1000, null=True)
 
     def __str__(self):
