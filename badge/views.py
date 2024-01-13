@@ -8,6 +8,9 @@ from django.template import loader
 
 from .models import Badge
 
+import environ
+import requests
+import json
 
 class BadgeView(APIView):
     def get(self, request, github_user_organization, repo_name, github_user, *args, **kwargs):
