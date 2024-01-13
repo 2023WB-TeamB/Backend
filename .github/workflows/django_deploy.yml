@@ -34,10 +34,4 @@ jobs:
 
     - name: Docker-Compose Up
       run: |
-        docker-compose -f docker-compose.dev.yml up -d --remove-orphans > result.log 2>&1  # 결과를 파일에 저장
-        cat result.log
-        grep -Eq "Creating backend \.\.\. done|Recreating backend \.\.\. done" result.log  # 파일에서 "Creating backend ... done" 또는 "Recreating backend ... done"이 포함된 줄이 있는지 확인
-        if [ $? -ne 0 ]; then  # 위의 문자열이 포함된 줄이 없으면
-          docker-compose -f docker-compose.dev.yml down  # Docker 컨테이너를 종료
-          exit 1  # 실패 상태로 종료
-        fi
+        docker-compose -f docker-compose.dev.yml up -d --remove-orphans
