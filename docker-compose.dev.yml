@@ -15,7 +15,8 @@ services:
     volumes:
       - .:/backend
     # command : 컨테이너가 띄워질 때 실행하는 명령어 / 서버실행
-    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+#    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    command: "gunicorn gtd.wsgi --preload --bind 0.0.0.0:8000 --timeout 240"
     restart: on-failure
     ports:
       - 8000:8000
@@ -58,6 +59,48 @@ services:
       - .:/backend
     networks:
       - gtd
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - prometheus_data:/prometheus
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    ports:
+      - 9090:9090
+    container_name: prometheus
+    networks:
+      - gtd
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+    ports:
+      - 3001:3000
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    depends_on:
+      - prometheus
+    expose:
+      - 3001
+    networks:
+        - gtd
+
+volumes:
+  prometheus_data: { }
+  grafana_data: { }
 
 networks:
   gtd:

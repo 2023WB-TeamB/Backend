@@ -62,6 +62,8 @@ INSTALLED_APPS = [
 
     'django_celery_beat', # celery
     'django_celery_results',
+
+    'django_prometheus', # prometheus
 ]
 
 # Celery
@@ -143,6 +145,10 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
     'corsheaders.middleware.CorsMiddleware',  # cors 설정, 상단에 추가
+
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
+
 ]
 
 ROOT_URLCONF = 'gtd.urls'
