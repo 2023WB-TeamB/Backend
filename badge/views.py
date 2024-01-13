@@ -92,21 +92,28 @@ class BadgeView(APIView):
             # print(request_contributor_info)
             # -------------------------------------------------------------------------
             # 임시 데이터 (GitHub Logic 구현 후 변경 필요)
-            commit_cnt = 230
-            pull_request_cnt = 74
-            contribution = 80
+            # commit_cnt = 10
+            # pull_request_cnt = 74
+            # contribution = 80
             # -------------------------------------------------------------------------
             # 가중치 계산 및 토탈 점수 산출 (아직 계산식 미정)
             # 현재 contribution == total_percent 로 사용하고 있어
             # context도 percent = contribution으로 되어 있어 나중에 수정 필요
-            percent = contribution
+            # percent = contribution
 
-            # DataBase에 저장
-            badge = Badge(github_id=github_user, commit_cnt=commit_cnt,
-                          pull_request_cnt=pull_request_cnt, contribution=contribution,
-                          repository_url=repository_url)
-            badge.save()
-
+        # repository_url이 같은 badge데이터 가져오기
+        contributor_user = Badge.objects.filter(github_id=github_user, repository_url=repository_url).get()
+        contributors = Badge.objects.filter(repository_url=repository_url)
+        percent = contributor_user.contribution / (100 * 1 / len(contributors))
+        rank = "F"
+        if percent >= 1.2:
+            rank = "A"
+        elif percent > 0.8:
+            rank = "B"
+        elif percent > 0.5:
+            rank = "C"
+        elif percent > 0.1:
+            rank = "D"
         # theme = request.GET.get('theme', 'basic')
         template = loader.get_template('tag/profile.html')
         context = {
