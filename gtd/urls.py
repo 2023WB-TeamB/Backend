@@ -22,6 +22,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/', include('users.urls')),
     path('api/v1/', include('docs.urls')),
+    path('', include('badge.urls')),
 
     # swagger 관련 url
     path(r'swagger(?P<format>\.json|\.yaml)', schema_view.without_ui(cache_timeout=0), name='schema-json'),
