@@ -40,17 +40,6 @@ class BadgeView(APIView):
         # 뱃지에 등록된 데이터가 있는 경우
         if Badge.objects.filter(github_id=github_user, repository_url=repository_url).exists():
             badge = Badge.objects.get(github_id=github_user, repository_url=repository_url)
-            # template = loader.get_template('tag/profile.html')
-            # context = {
-            #     'github_user': badge.github_id, 'repo_name': repo_name,
-            #     'percent': badge.contribution, 'commits': badge.commit_cnt,
-            #     'pull_requests': badge.pull_request_cnt
-            # }
-            # # TODO: 아래 코드 -> 즉 html(svg) 반환 코드는 모든 상황에서 진행됄 예정이기 때문에 나중에 한번에 처리 (분리 완료)
-            # response = HttpResponse(content=template.render(context, request))
-            # response['Content-Type'] = 'image/svg+xml'
-            # response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-            # return response
 
         # DataBase에 Badge Data가 없는 경우
         else:
