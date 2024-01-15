@@ -40,7 +40,8 @@ class DocsList(APIView):
                 "message": "user_id가 존재하지 않습니다.",
             }, status=status.HTTP_404_NOT_FOUND)
 
-        docs = Docs.objects.filter(is_deleted=False, user_id=user_id)  # is_deleted가 False인 객체만 조회
+        docs = Docs.objects.filter(is_deleted=False, user_id=user_id).order_by(
+            '-updated_at')
         if not docs:  # 문서가 존재하지 않는 경우
             return Response({
                 "status": 404,
