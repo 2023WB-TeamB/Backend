@@ -5,13 +5,9 @@ from rest_framework import status
 
 
 class DocsSerializer(serializers.ModelSerializer):
-    tech_stack = serializers.StringRelatedField(many=True, source='techstack_set')
-
     class Meta:
         model = Docs
-        fields = ('id', 'user_id', 'title', 'content',  'repository_url', 'url', 'language',
-                  'color', 'tech_stack', 'created_at', 'updated_at', 'is_deleted')
-
+        fields = '__all__'
 
     def response(self, data):
         response_data = {

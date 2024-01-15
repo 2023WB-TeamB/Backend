@@ -3,6 +3,9 @@ import base64
 import environ
 from openai import OpenAI
 
+import time
+import logging
+
 env = environ.Env(DEBUG=(bool, True))
 GITHUB_TOKEN = env('GITHUB_TOKEN')
 GITHUB_BEARER_HEADERS = {'Authorization': f'Bearer {GITHUB_TOKEN}'}
@@ -11,7 +14,6 @@ GPT_SECRET_KEY = env('GPT_SECRET_KEY')
 FRAMEWORK_ASSISTANT_ID = env('FRAMEWORK_ASSISTANT_ID')
 ENG_CODE_ASSISTANT_ID = env('ENG_CODE_ASSISTANT_ID')
 KOR_CODE_ASSISTANT_ID = env('KOR_CODE_ASSISTANT_ID')
-
 
 ignore_file = [
     ".gitignore", ".idea", ".vscode", "__init__.py", "migrations", "manage.py", "asgi.py",
@@ -50,7 +52,8 @@ def display_only_directory_structure(file_structure, owner, repo, indent=""):
         if element['type'] == "dir":
             nested_structure = get_file_content(owner, repo, element['path'])
             if nested_structure:
-                result += display_only_directory_structure(nested_structure, owner=owner, repo=repo, indent=indent + "\t")
+                result += display_only_directory_structure(nested_structure, owner=owner, repo=repo,
+                                                           indent=indent + "\t")
     return result
 
 
@@ -86,6 +89,8 @@ def framework_finder(url):
             thread_id=thread_id,
             run_id=run.id,
         )
+        logging.info(f"Run status: {run}")
+        time.sleep(1)
 
     messages = framework_assistant_client.beta.threads.messages.list(
         thread_id=thread_id,
@@ -100,7 +105,6 @@ def framework_finder(url):
 
 
 def get_github_code_prompt(url, framework):
-
     data_prmp = []
 
     if url.startswith("https://"):
@@ -111,7 +115,6 @@ def get_github_code_prompt(url, framework):
     repo = repo_url_list[2].split(".")[0]
     path = ''
     root_file = get_file_content(owner, repo, path)
-
 
     ###########################################################################################################################
     ###########################################################################################################################
@@ -292,7 +295,7 @@ tech stack만 알려줘,
     run = code_assistant_client.beta.threads.runs.create(
         thread_id=thread_id,
         assistant_id=assistant_id,
-        instructions= instructions
+        instructions=instructions
     )
 
     while run.status != "completed":
