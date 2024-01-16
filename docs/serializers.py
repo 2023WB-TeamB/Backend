@@ -1,3 +1,4 @@
+from . import models
 from .models import Docs, Keywords
 from rest_framework import serializers
 from rest_framework.response import Response
@@ -12,7 +13,7 @@ class KeywordsSerializer(serializers.ModelSerializer):
 
 class DocsSearchSerializer(serializers.ModelSerializer):
     keywords = KeywordsSerializer(source='keywords_set', many=True)
-
+    
     class Meta:
         model = Docs
         fields = ['title', 'updated_at', 'keywords']
