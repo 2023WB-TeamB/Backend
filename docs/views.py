@@ -362,6 +362,8 @@ class DocsContributorView(APIView):
 
 
 class DocsSearchView(APIView):
+    permission_classes = [IsAuthenticated]
+    @swagger_auto_schema(request_body=SwaggerDocsSearchPostSerializer)
     def post(self, request, *args, **kwargs):
         query = request.data.get('query')
         if query is None:

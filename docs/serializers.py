@@ -110,3 +110,8 @@ class SwaggerDocsSharePostSerializer(serializers.Serializer):
 
 class SwaggerDocsContributorPostSerializer(serializers.Serializer):
     repository_url = serializers.CharField()
+
+    
+class SwaggerDocsSearchPostSerializer(serializers.Serializer):
+    query = serializers.CharField()
+
