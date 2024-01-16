@@ -1,8 +1,19 @@
-from .models import Docs
+from .models import Docs, Keywords
 from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework import status
 
+class KeywordsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Keywords
+        fields = ['name']
+
+class DocsSearchSerializer(serializers.ModelSerializer):
+    keywords = KeywordsSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = Docs
+        fields = ['title', 'updated_at', 'keywords']
 
 class DocsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -72,3 +83,4 @@ class SwaggerDocsSharePostSerializer(serializers.Serializer):
 
 class SwaggerDocsContributorPostSerializer(serializers.Serializer):
     repository_url = serializers.CharField()
+

@@ -8,4 +8,5 @@ urlpatterns = [
     path("docs/create/", DocsCreateView.as_view()),
     path("docs/share/", DocsShareView.as_view()),
     path('docs/contributor/',DocsContributorView.as_view()),
+    path('docs/search/', DocsSearchView.as_view()),
 ]
