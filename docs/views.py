@@ -107,15 +107,14 @@ class DocsDetail(APIView):  # Docs의 detail을 보여주는 역할
                 "message": "해당 문서를 찾을 수 없습니다.",
             }, status=status.HTTP_404_NOT_FOUND)
 
+        keywords = []
+        for keyword in request.data.get('keywords', []):
+            keywords.append({"name": keyword})
+
+        request.data['keywords'] = keywords
         serializer = DocsEditSerializer(docs, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-
-            # 키워드 처리
-            keywords_data = request.data.get('keywords', [])
-            docs.keywords_set.all().delete()  # 기존 키워드 삭제
-            for keyword in keywords_data:  # 새로운 키워드 추가
-                Keywords.objects.create(docs_id=docs, name=keyword)
 
             return Response({
                 "message": "문서 수정 성공",

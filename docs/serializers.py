@@ -86,6 +86,17 @@ class DocsEditSerializer(serializers.ModelSerializer):
         model = Docs
         fields = ('id', 'title', 'content', 'color', 'keywords', 'created_at', 'updated_at',)
 
+    def update(self, instance, validated_data):
+        keywords_data = validated_data.pop('keywords_set', [])
+        instance = super().update(instance, validated_data)
+
+        # Handle keywords
+        instance.keywords_set.all().delete()  # remove old keywords
+        for keyword_data in keywords_data:
+            Keywords.objects.create(docs_id=instance, **keyword_data)
+
+        return instance
+
 class SwaggerDocsPostSerializer(serializers.Serializer):
     repository_url = serializers.CharField()
     language = serializers.CharField()
