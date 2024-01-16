@@ -107,11 +107,14 @@ class DocsDetail(APIView):  # Docs의 detail을 보여주는 역할
                 "message": "해당 문서를 찾을 수 없습니다.",
             }, status=status.HTTP_404_NOT_FOUND)
 
-        keywords = []
-        for keyword in request.data.get('keywords', []):
-            keywords.append({"name": keyword})
+        if 'keywords' in request.data:  # 키워드가 제공된 경우에만 키워드를 업데이트합니다.
+            keywords = []
+            for keyword in request.data['keywords']:
+                keywords.append({"name": keyword})
+            request.data['keywords'] = keywords
+        else:  # 키워드가 제공되지 않은 경우, 원래의 키워드를 유지합니다.
+            request.data['keywords'] = [{"name": keyword.name} for keyword in docs.keywords_set.all()]
 
-        request.data['keywords'] = keywords
         serializer = DocsEditSerializer(docs, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -121,7 +124,7 @@ class DocsDetail(APIView):  # Docs의 detail을 보여주는 역할
                 "status": 200,
                 "data": serializer.data
             }, status=status.HTTP_200_OK)
-        else :
+        else:
             return Response({
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
