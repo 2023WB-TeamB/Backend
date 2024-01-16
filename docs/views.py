@@ -1,4 +1,5 @@
 import time
+from collections import defaultdict
 
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.permissions import IsAuthenticated
@@ -22,10 +23,10 @@ from rest_framework.views import APIView
 from drf_yasg.utils import swagger_auto_schema, no_body
 
 
-@swagger_auto_schema(request_body=no_body)
 class DocsList(APIView):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(request_body=no_body)
     def get(self, request, *args, **kwargs):  # 문서 조회
         authorization_header = request.META.get('HTTP_AUTHORIZATION')
         if authorization_header and authorization_header.startswith('Bearer '):
@@ -33,67 +34,71 @@ class DocsList(APIView):
             user_id = user_token_to_data(token)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-
         if not User.objects.filter(id=user_id).exists():  # user_id가 User 테이블에 존재하지 않는 경우
             return Response({
                 "status": 404,
                 "message": "user_id가 존재하지 않습니다.",
             }, status=status.HTTP_404_NOT_FOUND)
-
-        docs = Docs.objects.filter(is_deleted=False, user_id=user_id).order_by(
-            '-updated_at')
+        docs = Docs.objects.filter(is_deleted=False, user_id=user_id).order_by('-updated_at')
         if not docs:  # 문서가 존재하지 않는 경우
             return Response({
                 "status": 404,
                 "message": "해당 user_id에 해당하는 문서가 존재하지 않습니다.",
             }, status=status.HTTP_404_NOT_FOUND)
-        serializer = DocsSerializer(docs, many=True)
-        docs_data = []
-        for item in serializer.data:
-            docs_data.append({
-                "id": item['id'],
-                "title": item['title'],
-                "color": item['color'],
-                "tech_stack": item['tech_stack'],
-                "created_at": item['created_at'],
-                "updated_at": item['updated_at']
-            })
-        response_data = {
+        serializer = DocsViewSerializer(docs, many=True)
+        return Response({
+            "message": "문서 조회 성공",
             "status": 200,
-            "message": '문서 조회 성공',
-            "data": {
-                "docs": docs_data
-            }
-        }
-        return Response(response_data, status=status.HTTP_200_OK)
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
+
+
 
 @swagger_auto_schema(request_body=no_body)
-class DocsDetail(APIView): # Docs의 detail을 보여주는 역할
+class DocsVersionList(APIView):
     permission_classes = [IsAuthenticated]
-    def get(self, request, *args, **kwargs):  # 문서 상세 조회, get() 메소드에서 URL의 경로 인자를 가져오려면 self.kwargs를 사용해야함.
+
+    def get(self, request, *args, **kwargs):  # 문서 버전별 조회
         authorization_header = request.META.get('HTTP_AUTHORIZATION')
         if authorization_header and authorization_header.startswith('Bearer '):
             token = authorization_header.split(' ')[1]
             user_id = user_token_to_data(token)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        docs_id = self.kwargs.get("pk")
-        if docs_id is None: # URL에서 pk를 제대로 가져오지 못한 경우
-            return Response({
-                "status": 404,
-                "message": "해당 문서를 찾을 수 없습니다.",
-            }, status=status.HTTP_404_NOT_FOUND)
-        try:
-            docs = Docs.objects.get(is_deleted=False, pk=docs_id)  # is_deleted가 False인 객체만 조회
-        except ObjectDoesNotExist: # 데이터베이스에서 문서를 찾는 도중 에러가 발생한 경우
-            return Response({
-                "status": 404,
-                "message": "해당 문서를 찾을 수 없습니다.",
-            }, status=status.HTTP_404_NOT_FOUND)
-        serializer = DocsSerializer(docs) #get 메소드에서 docs_detail 함수를 직접 호출하여 serializer.data를 처리.
-        return serializer.docs_detail([serializer.data]) # docs_detail 메소드가 리스트를 인자로 받음.
 
-    def put(self, request, *args, **kwargs):  # 문서 수정
+        docs = Docs.objects.filter(is_deleted=False, user_id=user_id)
+        if not docs:  # 문서가 존재하지 않는 경우
+            return Response({
+                "status": 404,
+                "message": "해당 user_id에 해당하는 문서가 존재하지 않습니다.",
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        docs_data = defaultdict(list)
+        for doc in docs:
+            group_title = '/'.join(doc.repository_url.split('/')[-2:])  # 'teamName/repository' 형식으로 그룹 제목 설정
+            docs_data[group_title].append({
+                "id": doc.id,
+                "title": doc.title,
+                "color": doc.color,
+                "created_at": doc.created_at.strftime('%y-%m-%d'),  # 날짜를 'yy-mm-dd' 형식으로 변환
+            })
+
+        # 각 url 별 문서를 최신 생성 순서로 정렬
+        for group_title in docs_data:
+            docs_data[group_title].sort(key=lambda x: x['created_at'], reverse=True)
+
+        response_data = {
+            "status": 200,
+            "message": '문서 조회 성공',
+            "data": dict(docs_data),  # defaultdict를 dict로 변환. defaultdict는 컬렉션을 그룹화할 수 있지만, JSON으로 직렬화할 수 없기 때문.
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
+
+@swagger_auto_schema(request_body=no_body)
+class DocsDetail(APIView):  # Docs의 detail을 보여주는 역할
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):  # 문서 상세 조회, get() 메소드에서 URL의 경로 인자를 가져오려면 self.kwargs를 사용해야함.
         authorization_header = request.META.get('HTTP_AUTHORIZATION')
         if authorization_header and authorization_header.startswith('Bearer '):
             token = authorization_header.split(' ')[1]
@@ -107,32 +112,65 @@ class DocsDetail(APIView): # Docs의 detail을 보여주는 역할
                 "message": "해당 문서를 찾을 수 없습니다.",
             }, status=status.HTTP_404_NOT_FOUND)
         try:
+            docs = Docs.objects.get(is_deleted=False, pk=docs_id)  # is_deleted가 False인 객체만 조회
+        except ObjectDoesNotExist:  # 데이터베이스에서 문서를 찾는 도중 에러가 발생한 경우
+            return Response({
+                "status": 404,
+                "message": "해당 문서를 찾을 수 없습니다.",
+            }, status=status.HTTP_404_NOT_FOUND)
+        serializer = DocsDetailSerializer(docs)  # get 메소드에서 docs_detail 함수를 직접 호출하여 serializer.data를 처리.
+
+        return Response({
+            "message": "문서 상세 조회 성공",
+            "status": 200,
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
+
+    def put(self, request, *args, **kwargs):  # 문서 수정
+        authorization_header = request.META.get('HTTP_AUTHORIZATION')
+        if authorization_header and authorization_header.startswith('Bearer '):
+            token = authorization_header.split(' ')[1]
+            user_id = user_token_to_data(token)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        docs_id = self.kwargs.get("pk")
+
+        if docs_id is None:  # URL에서 pk를 제대로 가져오지 못한 경우
+            return Response({
+                "status": 404,
+                "message": "해당 문서를 찾을 수 없습니다.",
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        try:
             docs = Docs.objects.get(is_deleted=False, pk=docs_id, user_id=user_id)  # is_deleted가 False인 객체만 조회
         except ObjectDoesNotExist:  # 데이터베이스에서 문서를 찾는 도중 에러가 발생한 경우
             return Response({
                 "status": 404,
                 "message": "해당 문서를 찾을 수 없습니다.",
             }, status=status.HTTP_404_NOT_FOUND)
-        serializer = DocsSerializer(docs, data=request.data, partial=True)
+
+        if 'keywords' in request.data:  # 키워드가 제공된 경우에만 키워드를 업데이트합니다.
+            keywords = []
+            for keyword in request.data['keywords']:
+                keywords.append({"name": keyword})
+            request.data['keywords'] = keywords
+        else:  # 키워드가 제공되지 않은 경우, 원래의 키워드를 유지합니다.
+            request.data['keywords'] = [{"name": keyword.name} for keyword in docs.keywords_set.all()]
+
+        serializer = DocsEditSerializer(docs, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            response_data = {
-                "status": 200,
-                "message": "문서가 성공적으로 수정되었습니다.",
-                "data": {
-                    "id": serializer.data['id'],
-                    "title": serializer.data['title'],
-                    "content": serializer.data['content'],
-                    "color": serializer.data['color'],
-                    "created_at": serializer.data['created_at'],
-                    "updated_at": serializer.data['updated_at'],
-                    "tech_stack": serializer.data['tech_stack']
-                }
-            }
-            return Response(response_data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def delete(self, request, *args, **kwargs): # 문서 삭제
+            return Response({
+                "message": "문서 수정 성공",
+                "status": 200,
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def delete(self, request, *args, **kwargs):  # 문서 삭제
         authorization_header = request.META.get('HTTP_AUTHORIZATION')
         if authorization_header and authorization_header.startswith('Bearer '):
             token = authorization_header.split(' ')[1]
@@ -159,8 +197,10 @@ class DocsDetail(APIView): # Docs의 detail을 보여주는 역할
             "message": "문서가 성공적으로 삭제되었습니다."
         }, status=status.HTTP_200_OK)
 
+
 class DocsCreateView(APIView):
     permission_classes = [IsAuthenticated]
+
     @swagger_auto_schema(request_body=SwaggerDocsPostSerializer)
     def post(self, request, *args, **kwargs):
         repository_url = request.data.get('repository_url')
@@ -198,7 +238,7 @@ class DocsCreateView(APIView):
             framework = framework.result
         else:
             return Response({"message": "framework 추출 실패", "status": 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+
         ####################################################
         if repository_url.startswith("https://"):
             repository_url = repository_url.replace("https://", "")
@@ -260,32 +300,28 @@ class DocsCreateView(APIView):
         # TODO: 추출한 코드를 활용하여 문서 생성
 
 
-
 class DocsShareView(APIView):
     permission_classes = [IsAuthenticated]
+
     @swagger_auto_schema(request_body=SwaggerDocsSharePostSerializer)
     def post(self, request, *args, **kwargs):
-        if request.method == 'POST':
-            docs_id = request.data.get('docs_id')
-            if docs_id is None:
-                return Response({"message": "문서 ID를 입력해 주세요.", "status": 400}, status=status.HTTP_400_BAD_REQUEST)
-            try:
-                doc = Docs.objects.get(pk=docs_id)
-            except Docs.DoesNotExist:
-                return Response({"message": "존재하지 않는 문서 ID입니다.", "status": 404}, status=status.HTTP_404_NOT_FOUND)
-            if doc.url is not None:
-                return Response({"message": "이미 URL이 생성된 문서입니다.", "status": 409, "existing_url": doc.url},
-                                status=status.HTTP_409_CONFLICT)
-            # UID를 사용하여 고유한 URL 생성
-            base_url = 'http://127.0.0.1:8000/api/v1/docs/share/'
-            unique_url = base_url + str(uuid.uuid4())
-            doc.url = unique_url
-            doc.save()
-        serializer = DocsSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return serializer.response(data=serializer.data)
-        return Response(serializer.errors, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        docs_id = request.data.get('docs_id')
+        if docs_id is None:
+            return Response({"message": "문서 ID를 입력해 주세요.", "status": 400}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            doc = Docs.objects.get(pk=docs_id)
+        except Docs.DoesNotExist:
+            return Response({"message": "존재하지 않는 문서 ID입니다.", "status": 404}, status=status.HTTP_404_NOT_FOUND)
+        if doc.url is not None:
+            return Response({"message": "이미 URL이 생성된 문서입니다.", "status": 409, "existing_url": doc.url},
+                            status=status.HTTP_409_CONFLICT)
+        # UID를 사용하여 고유한 URL 생성
+        base_url = 'http://127.0.0.1:8000/api/v1/docs/share/'
+        unique_url = base_url + str(uuid.uuid4())
+        doc.url = unique_url
+        doc.save()
+        return Response({"message": "URL이 생성되었습니다.", "url": unique_url}, status=status.HTTP_201_CREATED)
 
 
 class DocsContributorView(APIView):

@@ -90,7 +90,7 @@ def framework_finder(url):
             run_id=run.id,
         )
         logging.info(f"Run status: {run}")
-        time.sleep(1)
+        time.sleep(2)
 
     messages = framework_assistant_client.beta.threads.messages.list(
         thread_id=thread_id,
