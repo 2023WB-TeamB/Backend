@@ -10,8 +10,7 @@ class KeywordsSerializer(serializers.ModelSerializer):
         fields = ['name']
 
 class DocsSearchSerializer(serializers.ModelSerializer):
-    keywords = KeywordsSerializer(source='keywords_set', many=True)  # 'keywords_set'으로 변경
-
+    keywords = KeywordsSerializer(source='keywords_set', many=True)
     class Meta:
         model = Docs
         fields = ['title', 'updated_at', 'keywords']
