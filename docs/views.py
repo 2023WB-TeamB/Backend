@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
 from users.utils import user_token_to_data
-from .models import Docs, User
+from .models import Docs, User, Keywords
 from .serializers import *
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -323,3 +323,21 @@ class DocsContributorView(APIView):
             return Response({'message': '컨트리뷰터 생성 성공', 'status': 201, 'data': result}, status=status.HTTP_201_CREATED)
         else:
             return Response({'message': '레포지토리를 찾을 수 없습니다.', 'status': 404}, status=status.HTTP_404_NOT_FOUND)
+
+
+class DocsSearchView(APIView):
+    def post(self, request, *args, **kwargs):
+        query = request.data.get('query')
+        if query is None:
+            return Response({"message": "검색어를 입력해 주세요.", "status": 400}, status=status.HTTP_400_BAD_REQUEST)
+
+        documents = Docs.objects.filter(title__icontains=query) | Docs.objects.filter(keywords__name__icontains=query)
+        if not documents.exists():
+            return Response({"message": "해당하는 문서가 없습니다.", "status": 404}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = DocsSearchSerializer(documents, many=True)
+        return Response({
+            "message": "문서 검색 성공",
+            "status": 200,
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
