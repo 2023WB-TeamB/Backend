@@ -15,6 +15,13 @@ class DocsSearchSerializer(serializers.ModelSerializer):
         model = Docs
         fields = ['title', 'updated_at', 'keywords']
 
+class DocsViewSerializer(serializers.ModelSerializer):
+    keywords = KeywordsSerializer(many=True, read_only=True)
+    class Meta:
+        model = Docs
+        fields = ('id', 'title', 'color', 'keywords', 'created_at', 'updated_at',)
+
+
 class DocsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Docs
