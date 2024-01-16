@@ -9,6 +9,7 @@ COPY requirements.txt .
 
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
+RUN pip install django-redis
 
 # 소스 코드 복사
 COPY . ./

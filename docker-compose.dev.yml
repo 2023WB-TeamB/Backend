@@ -15,7 +15,7 @@ services:
     volumes:
       - .:/backend
     # command : 컨테이너가 띄워질 때 실행하는 명령어 / 서버실행
-#    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    # command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     command: "gunicorn gtd.wsgi --preload --bind 0.0.0.0:8000 --timeout 240"
     restart: on-failure
     ports:
@@ -57,6 +57,14 @@ services:
       - backend
     volumes:
       - .:/backend
+    networks:
+      - gtd
+
+  redis:
+    image: "redis:alpine"
+    container_name: redis
+    ports:
+      - 6379:6379
     networks:
       - gtd
 

@@ -26,3 +26,4 @@ gevent==23.9.1
 openai==1.7.0
 django-prometheus==2.3.1
 gunicorn==21.2.0
+redis==5.0.1
