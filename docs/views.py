@@ -22,10 +22,9 @@ from rest_framework.views import APIView
 from drf_yasg.utils import swagger_auto_schema, no_body
 
 
-@swagger_auto_schema(request_body=no_body)
 class DocsList(APIView):
     permission_classes = [IsAuthenticated]
-
+    @swagger_auto_schema(request_body=no_body)
     def get(self, request, *args, **kwargs):  # 문서 조회
         authorization_header = request.META.get('HTTP_AUTHORIZATION')
         if authorization_header and authorization_header.startswith('Bearer '):
@@ -33,39 +32,23 @@ class DocsList(APIView):
             user_id = user_token_to_data(token)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-
         if not User.objects.filter(id=user_id).exists():  # user_id가 User 테이블에 존재하지 않는 경우
             return Response({
                 "status": 404,
                 "message": "user_id가 존재하지 않습니다.",
             }, status=status.HTTP_404_NOT_FOUND)
-
-        docs = Docs.objects.filter(is_deleted=False, user_id=user_id).order_by(
-            '-updated_at')
+        docs = Docs.objects.filter(is_deleted=False, user_id=user_id).order_by('-updated_at')
         if not docs:  # 문서가 존재하지 않는 경우
             return Response({
                 "status": 404,
                 "message": "해당 user_id에 해당하는 문서가 존재하지 않습니다.",
             }, status=status.HTTP_404_NOT_FOUND)
-        serializer = DocsSerializer(docs, many=True)
-        docs_data = []
-        for item in serializer.data:
-            docs_data.append({
-                "id": item['id'],
-                "title": item['title'],
-                "color": item['color'],
-                "tech_stack": item['tech_stack'],
-                "created_at": item['created_at'],
-                "updated_at": item['updated_at']
-            })
-        response_data = {
+        serializer = DocsViewSerializer(docs, many=True)
+        return Response({
+            "message": "문서 조회 성공",
             "status": 200,
-            "message": '문서 조회 성공',
-            "data": {
-                "docs": docs_data
-            }
-        }
-        return Response(response_data, status=status.HTTP_200_OK)
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
 
 @swagger_auto_schema(request_body=no_body)
 class DocsDetail(APIView): # Docs의 detail을 보여주는 역할
