@@ -1,4 +1,5 @@
 import time
+from collections import defaultdict
 
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.permissions import IsAuthenticated
@@ -64,6 +65,47 @@ class DocsList(APIView):
             "data": {
                 "docs": docs_data
             }
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
+
+
+@swagger_auto_schema(request_body=no_body)
+class DocsVersionList(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):  # 문서 버전별 조회
+        authorization_header = request.META.get('HTTP_AUTHORIZATION')
+        if authorization_header and authorization_header.startswith('Bearer '):
+            token = authorization_header.split(' ')[1]
+            user_id = user_token_to_data(token)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        docs = Docs.objects.filter(is_deleted=False, user_id=user_id)
+        if not docs:  # 문서가 존재하지 않는 경우
+            return Response({
+                "status": 404,
+                "message": "해당 user_id에 해당하는 문서가 존재하지 않습니다.",
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        docs_data = defaultdict(list)
+        for doc in docs:
+            group_title = '/'.join(doc.repository_url.split('/')[-2:])  # 'teamName/repository' 형식으로 그룹 제목 설정
+            docs_data[group_title].append({
+                "id": doc.id,
+                "title": doc.title,
+                "color": doc.color,
+                "created_at": doc.created_at.strftime('%y-%m-%d'),  # 날짜를 'yy-mm-dd' 형식으로 변환
+            })
+
+        # 각 url 별 문서를 최신 생성 순서로 정렬
+        for group_title in docs_data:
+            docs_data[group_title].sort(key=lambda x: x['created_at'], reverse=True)
+
+        response_data = {
+            "status": 200,
+            "message": '문서 조회 성공',
+            "data": dict(docs_data),  # defaultdict를 dict로 변환. defaultdict는 컬렉션을 그룹화할 수 있지만, JSON으로 직렬화할 수 없기 때문.
         }
         return Response(response_data, status=status.HTTP_200_OK)
 
