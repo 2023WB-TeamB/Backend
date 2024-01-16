@@ -4,20 +4,24 @@ from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework import status
 
+
 class KeywordsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Keywords
         fields = ['name']
 
+
 class DocsSearchSerializer(serializers.ModelSerializer):
     keywords = KeywordsSerializer(source='keywords_set', many=True)
+    
     class Meta:
         model = Docs
         fields = ['title', 'updated_at', 'keywords']
 
 
 class DocsViewSerializer(serializers.ModelSerializer):
-    keywords = KeywordsSerializer(many=True, read_only=True)
+    keywords = KeywordsSerializer(source='keywords_set', many=True)
+
     class Meta:
         model = Docs
         fields = ('id', 'title', 'color', 'keywords', 'created_at', 'updated_at',)
@@ -66,6 +70,34 @@ class DocsSerializer(serializers.ModelSerializer):
         }
         return Response(response_data, status=status.HTTP_200_OK)
 
+
+class DocsDetailSerializer(serializers.ModelSerializer):
+    keywords = KeywordsSerializer(source='keywords_set', many=True)
+
+    class Meta:
+        model = Docs
+        fields = ('id', 'title', 'content', 'color', 'keywords', 'repository_url', 'url', 'language', 'created_at',
+                  'updated_at',)
+
+
+class DocsEditSerializer(serializers.ModelSerializer):
+    keywords = KeywordsSerializer(source='keywords_set', many=True)
+
+    class Meta:
+        model = Docs
+        fields = ('id', 'title', 'content', 'color', 'keywords', 'created_at', 'updated_at',)
+
+    def update(self, instance, validated_data):
+        keywords_data = validated_data.pop('keywords_set', [])
+        instance = super().update(instance, validated_data)
+
+        # Handle keywords
+        instance.keywords_set.all().delete()  # remove old keywords
+        for keyword_data in keywords_data:
+            Keywords.objects.create(docs_id=instance, **keyword_data)
+
+        return instance
+
 class SwaggerDocsPostSerializer(serializers.Serializer):
     repository_url = serializers.CharField()
     language = serializers.CharField()
@@ -78,4 +110,3 @@ class SwaggerDocsSharePostSerializer(serializers.Serializer):
 
 class SwaggerDocsContributorPostSerializer(serializers.Serializer):
     repository_url = serializers.CharField()
-
