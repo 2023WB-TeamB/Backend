@@ -116,7 +116,7 @@ class BadgeView(APIView):
             rank = "D"
         # theme = request.GET.get('theme', 'basic')
         position = request.GET.get('position', repo_name)
-        template = loader.get_template('tag/profile.html')
+        template = loader.get_template('tag/profile2.html')
         context = {
             'github_user': badge.github_id, 'repo_name': repo_name,
             'percent': badge.contribution, 'commits': badge.commit_cnt,
