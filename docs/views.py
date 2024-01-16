@@ -118,8 +118,13 @@ class DocsDetail(APIView):  # Docs의 detail을 보여주는 역할
                 "status": 404,
                 "message": "해당 문서를 찾을 수 없습니다.",
             }, status=status.HTTP_404_NOT_FOUND)
-        serializer = DocsSerializer(docs)  # get 메소드에서 docs_detail 함수를 직접 호출하여 serializer.data를 처리.
-        return serializer.docs_detail([serializer.data])  # docs_detail 메소드가 리스트를 인자로 받음.
+        serializer = DocsDetailSerializer(docs)  # get 메소드에서 docs_detail 함수를 직접 호출하여 serializer.data를 처리.
+
+        return Response({
+            "message": "문서 상세 조회 성공",
+            "status": 200,
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
 
     def put(self, request, *args, **kwargs):  # 문서 수정
         authorization_header = request.META.get('HTTP_AUTHORIZATION')
@@ -129,11 +134,13 @@ class DocsDetail(APIView):  # Docs의 detail을 보여주는 역할
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         docs_id = self.kwargs.get("pk")
+
         if docs_id is None:  # URL에서 pk를 제대로 가져오지 못한 경우
             return Response({
                 "status": 404,
                 "message": "해당 문서를 찾을 수 없습니다.",
             }, status=status.HTTP_404_NOT_FOUND)
+
         try:
             docs = Docs.objects.get(is_deleted=False, pk=docs_id, user_id=user_id)  # is_deleted가 False인 객체만 조회
         except ObjectDoesNotExist:  # 데이터베이스에서 문서를 찾는 도중 에러가 발생한 경우
@@ -141,24 +148,27 @@ class DocsDetail(APIView):  # Docs의 detail을 보여주는 역할
                 "status": 404,
                 "message": "해당 문서를 찾을 수 없습니다.",
             }, status=status.HTTP_404_NOT_FOUND)
-        serializer = DocsSerializer(docs, data=request.data, partial=True)
+
+        if 'keywords' in request.data:  # 키워드가 제공된 경우에만 키워드를 업데이트합니다.
+            keywords = []
+            for keyword in request.data['keywords']:
+                keywords.append({"name": keyword})
+            request.data['keywords'] = keywords
+        else:  # 키워드가 제공되지 않은 경우, 원래의 키워드를 유지합니다.
+            request.data['keywords'] = [{"name": keyword.name} for keyword in docs.keywords_set.all()]
+
+        serializer = DocsEditSerializer(docs, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            response_data = {
+
+            return Response({
+                "message": "문서 수정 성공",
                 "status": 200,
-                "message": "문서가 성공적으로 수정되었습니다.",
-                "data": {
-                    "id": serializer.data['id'],
-                    "title": serializer.data['title'],
-                    "content": serializer.data['content'],
-                    "color": serializer.data['color'],
-                    "created_at": serializer.data['created_at'],
-                    "updated_at": serializer.data['updated_at'],
-                    "tech_stack": serializer.data['tech_stack']
-                }
-            }
-            return Response(response_data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                "data": serializer.data
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def delete(self, request, *args, **kwargs):  # 문서 삭제
         authorization_header = request.META.get('HTTP_AUTHORIZATION')
