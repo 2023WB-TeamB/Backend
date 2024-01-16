@@ -35,19 +35,6 @@ class DocsSerializer(serializers.ModelSerializer):
         }
         return Response(response_data, status=status.HTTP_201_CREATED)
 
-    def docs_share(self, data):
-        docs_id = data.get('docs_id')
-        doc = Docs.objects.get(pk=docs_id)
-
-        response_data = {
-            "message": "문서 공유 URL 생성 성공",
-            "status": 201,
-            "data": {
-                "share_url": doc.url,
-            }
-        }
-        return Response(response_data, status=status.HTTP_201_CREATED)
-
     def docs_detail(self, data):
         docs_data = []
         for item in data:
