@@ -26,7 +26,7 @@ from drf_yasg.utils import swagger_auto_schema, no_body
 class DocsList(APIView):
     permission_classes = [IsAuthenticated]
 
-    @swagger_auto_schema(request_body=no_body)
+    @swagger_auto_schema(tags=["Docs"], operation_summary="문서 조회 API", request_body=no_body)
     def get(self, request, *args, **kwargs):  # 문서 조회
         authorization_header = request.META.get('HTTP_AUTHORIZATION')
         if authorization_header and authorization_header.startswith('Bearer '):
@@ -53,11 +53,10 @@ class DocsList(APIView):
         }, status=status.HTTP_200_OK)
 
 
-
-@swagger_auto_schema(request_body=no_body)
 class DocsVersionList(APIView):
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(tags=["Docs"], operation_summary="문서 버전별 조회 API", request_body=no_body, )
     def get(self, request, *args, **kwargs):  # 문서 버전별 조회
         authorization_header = request.META.get('HTTP_AUTHORIZATION')
         if authorization_header and authorization_header.startswith('Bearer '):
@@ -94,10 +93,11 @@ class DocsVersionList(APIView):
         }
         return Response(response_data, status=status.HTTP_200_OK)
 
-@swagger_auto_schema(request_body=no_body)
+
 class DocsDetail(APIView):  # Docs의 detail을 보여주는 역할
     permission_classes = [IsAuthenticated]
 
+    @swagger_auto_schema(tags=["Docs"], operation_summary="문서 상세 조회 API", request_body=no_body)
     def get(self, request, *args, **kwargs):  # 문서 상세 조회, get() 메소드에서 URL의 경로 인자를 가져오려면 self.kwargs를 사용해야함.
         authorization_header = request.META.get('HTTP_AUTHORIZATION')
         if authorization_header and authorization_header.startswith('Bearer '):
@@ -126,6 +126,7 @@ class DocsDetail(APIView):  # Docs의 detail을 보여주는 역할
             "data": serializer.data
         }, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(tags=["Docs"], operation_summary="문서 수정 API", request_body=SwaggerDocsPutSerializer)
     def put(self, request, *args, **kwargs):  # 문서 수정
         authorization_header = request.META.get('HTTP_AUTHORIZATION')
         if authorization_header and authorization_header.startswith('Bearer '):
@@ -170,6 +171,7 @@ class DocsDetail(APIView):  # Docs의 detail을 보여주는 역할
             return Response({
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @swagger_auto_schema(tags=["Docs"], operation_summary="문서 삭제 API")
     def delete(self, request, *args, **kwargs):  # 문서 삭제
         authorization_header = request.META.get('HTTP_AUTHORIZATION')
         if authorization_header and authorization_header.startswith('Bearer '):
@@ -201,7 +203,7 @@ class DocsDetail(APIView):  # Docs의 detail을 보여주는 역할
 class DocsCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @swagger_auto_schema(request_body=SwaggerDocsPostSerializer)
+    @swagger_auto_schema(tags=["Docs"], operation_summary="문서 생성 API", request_body=SwaggerDocsPostSerializer)
     def post(self, request, *args, **kwargs):
         repository_url = request.data.get('repository_url')
         language = request.data.get('language')
@@ -303,7 +305,7 @@ class DocsCreateView(APIView):
 class DocsShareView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @swagger_auto_schema(request_body=SwaggerDocsSharePostSerializer)
+    @swagger_auto_schema(tags=["Docs"], operation_summary="문서 공유 API", request_body=SwaggerDocsSharePostSerializer)
     def post(self, request, *args, **kwargs):
 
         docs_id = request.data.get('docs_id')
@@ -327,7 +329,7 @@ class DocsShareView(APIView):
 class DocsContributorView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @swagger_auto_schema(request_body=SwaggerDocsContributorPostSerializer)
+    @swagger_auto_schema(tags=["Docs"], operation_summary="문서 컨트리뷰터 생성 API", request_body=SwaggerDocsContributorPostSerializer)
     def post(self, request, *args, **kwargs):
         repo_url = request.data.get('repository_url')
 
@@ -363,7 +365,8 @@ class DocsContributorView(APIView):
 
 class DocsSearchView(APIView):
     permission_classes = [IsAuthenticated]
-    @swagger_auto_schema(request_body=SwaggerDocsSearchPostSerializer)
+
+    @swagger_auto_schema(tags=["Docs"], operation_summary="문서 검색 API", request_body=SwaggerDocsSearchPostSerializer)
     def post(self, request, *args, **kwargs):
         query = request.data.get('query')
         if query is None:
