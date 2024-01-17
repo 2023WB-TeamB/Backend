@@ -13,7 +13,7 @@ class KeywordsSerializer(serializers.ModelSerializer):
 
 class DocsSearchSerializer(serializers.ModelSerializer):
     keywords = KeywordsSerializer(source='keywords_set', many=True)
-    
+
     class Meta:
         model = Docs
         fields = ['title', 'updated_at', 'keywords']
@@ -98,10 +98,20 @@ class DocsEditSerializer(serializers.ModelSerializer):
 
         return instance
 
+
+# swagger
 class SwaggerDocsPostSerializer(serializers.Serializer):
     repository_url = serializers.CharField()
     language = serializers.CharField()
     color = serializers.CharField()
+
+
+# fields = ('id', 'title', 'content', 'color', 'keywords', 'created_at', 'updated_at',)
+class SwaggerDocsPutSerializer(serializers.Serializer):
+    title = serializers.CharField()
+    content = serializers.CharField()
+    color = serializers.CharField()
+    keywords = serializers.ListField(child=serializers.CharField())
 
 
 class SwaggerDocsSharePostSerializer(serializers.Serializer):
@@ -111,7 +121,6 @@ class SwaggerDocsSharePostSerializer(serializers.Serializer):
 class SwaggerDocsContributorPostSerializer(serializers.Serializer):
     repository_url = serializers.CharField()
 
-    
+
 class SwaggerDocsSearchPostSerializer(serializers.Serializer):
     query = serializers.CharField()
-
