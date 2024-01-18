@@ -228,6 +228,9 @@ class DocsCreateView(APIView):
             return Response({"message": "유효하지 않은 URL입니다.", "status": 404}, status=status.HTTP_400_BAD_REQUEST)
 
         framework = framework_finder_task.delay(repository_url)
+        if framework == "failed":
+            return Response({'message': 'GPT API Server Error.', 'status': 500},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         while True:
             if framework.ready():
@@ -261,6 +264,11 @@ class DocsCreateView(APIView):
             time.sleep(1)
 
         if res_data.result:
+            if res_data.result == "failed":
+                return Response({'message': 'GPT API Server Error.', 'status': 500},
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
             response = res_data.result['response']
             stack = res_data.result['stack']
             res_title = res_data.result['res_title']

@@ -84,13 +84,16 @@ def framework_finder(url):
         assistant_id=FRAMEWORK_ASSISTANT_ID,
     )
 
-    while run.status != "completed":
+    while run.status == "queued" or run.status == "in_progress":
         run = framework_assistant_client.beta.threads.runs.retrieve(
             thread_id=thread_id,
             run_id=run.id,
         )
-        logging.info(f"Run status: {run}")
-        time.sleep(2)
+        # logging.info(f"Run status: {run}")
+        time.sleep(5)
+
+    if run.status == "failed":
+        return "failed"
 
     messages = framework_assistant_client.beta.threads.messages.list(
         thread_id=thread_id,
@@ -221,11 +224,18 @@ def get_assistant_response(prompt_ary, language):
         assistant_id=assistant_id
     )
 
-    while run.status != "completed":
+    while run.status == "queued" or run.status == "in_progress":
         run = code_assistant_client.beta.threads.runs.retrieve(
             thread_id=thread_id,
             run_id=run.id
         )
+        time.sleep(5)
+        # logging.info(f"Run status: {run}")
+
+    if run.status == "failed":
+        return "failed", "failed", "failed"
+
+
 
     messages = code_assistant_client.beta.threads.messages.list(
         thread_id=thread_id
@@ -255,11 +265,16 @@ tech stack만 알려줘,
 과 같은 형식처럼"""
     )
 
-    while run.status != "completed":
+    while run.status == "queued" or run.status == "in_progress":
         run = code_assistant_client.beta.threads.runs.retrieve(
             thread_id=thread_id,
             run_id=run.id
         )
+        time.sleep(5)
+        # logging.info(f"Run status: {run}")
+
+    if run.status == "failed":
+        return "failed", "failed", "failed"
 
     messages = code_assistant_client.beta.threads.messages.list(
         thread_id=thread_id
@@ -298,11 +313,16 @@ tech stack만 알려줘,
         instructions=instructions
     )
 
-    while run.status != "completed":
+    while run.status == "queued" or run.status == "in_progress":
         run = code_assistant_client.beta.threads.runs.retrieve(
             thread_id=thread_id,
             run_id=run.id
         )
+        time.sleep(5)
+        # logging.info(f"Run status: {run}")
+
+    if run.status == "failed":
+        return "failed", "failed", "failed"
 
     messages = code_assistant_client.beta.threads.messages.list(
         thread_id=thread_id
