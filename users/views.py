@@ -22,8 +22,8 @@ from drf_yasg.utils import swagger_auto_schema
 
 
 class RegisterAPIView(APIView):
-    @swagger_auto_schema(request_body=SwaggerRegisterPostSerializer)
     # 회원가입
+    @swagger_auto_schema(tags=["Docs"], operation_summary="문서 수정 API", request_body=SwaggerRegisterPostSerializer)
     def post(self, request):
         serializer = UserSerializer(data=request.data)
 
@@ -72,10 +72,11 @@ class RegisterAPIView(APIView):
     #         return super().update(request, *args, **kwargs)
 
 
-@swagger_auto_schema(request_body=SwaggerLoginPostSerializer)
+
 class AuthAPIView(APIView):
 
     # 유저 정보 확인
+    @swagger_auto_schema(tags=["User"], operation_summary="유저 조회 API")
     def get(self, request):
         try:
             # 유저 식별
@@ -109,8 +110,9 @@ class AuthAPIView(APIView):
             # 사용 불가능한 토큰
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    @swagger_auto_schema(request_body=SwaggerLoginPostSerializer)
+
     # 로그인
+    @swagger_auto_schema(tags=["User"], operation_summary="로그인 API", request_body=SwaggerLoginPostSerializer)
     def post(self, request):
         # 유저 인증
         user = authenticate(
@@ -141,6 +143,7 @@ class AuthAPIView(APIView):
             return Response({'message': 'Invalid email or password.'}, status=status.HTTP_400_BAD_REQUEST)
 
     # 로그아웃
+    @swagger_auto_schema(tags=["User"], operation_summary="로그아웃 API")
     def delete(self, request):
         # 쿠키에 저장된 토큰 삭제
         response = Response({

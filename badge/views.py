@@ -12,7 +12,13 @@ import environ
 import requests
 import json
 
+# swagger 관련
+from rest_framework.views import APIView
+from drf_yasg.utils import swagger_auto_schema
+
+
 class BadgeView(APIView):
+    @swagger_auto_schema(tags=["Badge"], operation_summary="뱃지 조회 API")
     def get(self, request, github_user_organization, repo_name, github_user, *args, **kwargs):
 
         # TODO: github_user, repo_name 으로 문서화된 레포지토리가 있는지 확인
