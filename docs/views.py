@@ -373,11 +373,18 @@ class DocsSearchView(APIView):
     permission_classes = [IsAuthenticated]
     @swagger_auto_schema(request_body=SwaggerDocsSearchPostSerializer)
     def post(self, request, *args, **kwargs):
+        authorization_header = request.META.get('HTTP_AUTHORIZATION')
+        if authorization_header and authorization_header.startswith('Bearer '):
+            token = authorization_header.split(' ')[1]
+            user_id = user_token_to_data(token)
+        else:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
         query = request.data.get('query')
         if query is None:
             return Response({"message": "검색어를 입력해 주세요.", "status": 400}, status=status.HTTP_400_BAD_REQUEST)
 
-        documents = Docs.objects.filter(is_deleted=False, title__icontains=query) | Docs.objects.filter(is_deleted=False, keywords__name__icontains=query)
+        documents = Docs.objects.filter(is_deleted=False, title__icontains=query, user_id=user_id) | Docs.objects.filter(is_deleted=False, keywords__name__icontains=query, user_id=user_id)
         if not documents.exists():
             return Response({"message": "해당하는 문서가 없습니다.", "status": 404}, status=status.HTTP_404_NOT_FOUND)
 
