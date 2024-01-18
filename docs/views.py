@@ -230,6 +230,9 @@ class DocsCreateView(APIView):
             return Response({"message": "유효하지 않은 URL입니다.", "status": 404}, status=status.HTTP_400_BAD_REQUEST)
 
         framework = framework_finder_task.delay(repository_url)
+        if framework == "failed":
+            return Response({'message': 'GPT API Server Error.', 'status': 500},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         while True:
             if framework.ready():
@@ -263,6 +266,11 @@ class DocsCreateView(APIView):
             time.sleep(1)
 
         if res_data.result:
+            if res_data.result == "failed":
+                return Response({'message': 'GPT API Server Error.', 'status': 500},
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
             response = res_data.result['response']
             stack = res_data.result['stack']
             res_title = res_data.result['res_title']
@@ -368,11 +376,18 @@ class DocsSearchView(APIView):
 
     @swagger_auto_schema(tags=["Docs"], operation_summary="문서 검색 API", request_body=SwaggerDocsSearchPostSerializer)
     def post(self, request, *args, **kwargs):
+        authorization_header = request.META.get('HTTP_AUTHORIZATION')
+        if authorization_header and authorization_header.startswith('Bearer '):
+            token = authorization_header.split(' ')[1]
+            user_id = user_token_to_data(token)
+        else:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
         query = request.data.get('query')
         if query is None:
             return Response({"message": "검색어를 입력해 주세요.", "status": 400}, status=status.HTTP_400_BAD_REQUEST)
 
-        documents = Docs.objects.filter(title__icontains=query) | Docs.objects.filter(keywords__name__icontains=query)
+        documents = Docs.objects.filter(is_deleted=False, title__icontains=query, user_id=user_id) | Docs.objects.filter(is_deleted=False, keywords__name__icontains=query, user_id=user_id)
         if not documents.exists():
             return Response({"message": "해당하는 문서가 없습니다.", "status": 404}, status=status.HTTP_404_NOT_FOUND)
 
