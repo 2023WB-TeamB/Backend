@@ -12,11 +12,18 @@ from .theme import *
 import environ
 import requests
 import json
+
 from datetime import datetime
 # Flutter, React Native
 # Angular, Next, Nuxt, React, Svelte, Vue, Unity
 # Django, Flask, FastAPI, Node, Spring, SpringBoot
+
+# swagger 관련
+from rest_framework.views import APIView
+from drf_yasg.utils import swagger_auto_schema
+
 class BadgeView(APIView):
+    @swagger_auto_schema(tags=["Badge"], operation_summary="뱃지 조회 API")
     def get(self, request, github_user_organization, repo_name, github_user, *args, **kwargs):
 
         env = environ.Env(DEBUG=(bool, True))
