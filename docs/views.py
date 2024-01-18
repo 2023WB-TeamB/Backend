@@ -377,7 +377,7 @@ class DocsSearchView(APIView):
         if query is None:
             return Response({"message": "검색어를 입력해 주세요.", "status": 400}, status=status.HTTP_400_BAD_REQUEST)
 
-        documents = Docs.objects.filter(title__icontains=query) | Docs.objects.filter(keywords__name__icontains=query)
+        documents = Docs.objects.filter(is_deleted=False, title__icontains=query) | Docs.objects.filter(is_deleted=False, keywords__name__icontains=query)
         if not documents.exists():
             return Response({"message": "해당하는 문서가 없습니다.", "status": 404}, status=status.HTTP_404_NOT_FOUND)
 
