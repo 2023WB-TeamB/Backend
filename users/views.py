@@ -130,7 +130,6 @@ class AuthAPIView(APIView):
             email=request.data.get("email"), password=request.data.get("password")
         )
         if user is not None:
-            serializer = SignSerializer(user)
             token = TokenObtainPairSerializer.get_token(user)
             refresh_token = str(token)
             access_token = str(token.access_token)
@@ -144,8 +143,7 @@ class AuthAPIView(APIView):
                     "token": {
                         "access": access_token,
                         "refresh": refresh_token,
-                    },
-                    "user_id": user.id,
+                    }
                 },
                 status=status.HTTP_200_OK,
             )
