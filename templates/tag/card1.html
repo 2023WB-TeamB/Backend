@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1"
+     id="Layer_1"
+     xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     x="0px"
+     y="0px"
+     width="532px"
+     height="281px"
+     enable-background="new 0 0 455 429"
+     xml:space="preserve"
+>
+<foreignObject width="532px" height="281px">
+    <div xmlns="http://www.w3.org/1999/xhtml">
+            <meta charset="utf-8"/>
+        <style>
+            @import url("https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css");
+            @import url('https://fonts.cdnfonts.com/css/andale-mono');
+            @import url('https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,500,500i,700,700i,900,900i');
+            a {
+                text-decoration: none;
+            }
+
+            @font-face {
+                font-family: 'intelone-mono-font-family-regular';
+                src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2307-1@1.1/intelone-mono-font-family-regular.woff2') format('woff2');
+                font-weight: 400;
+                font-style: normal;
+            }
+
+            @font-face{
+                font-family:'DNFBitBitv2';
+                font-style:normal;
+                font-weight:400;
+                src:url('./DNFBitBitv2.otf')format('opentype')
+            }
+
+            .frame {
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: flex-start;
+                padding: 0;
+                margin: 0;
+                width: 532px;
+                height: 281px;
+
+                border-radius: 20px;
+                background: #323232;
+            }
+
+            .inner_frame {
+                margin-top: 28px;
+                margin-left: 28px;
+                padding-right: 28px;
+                width: calc(100% - 56px);
+            }
+
+            .first-stack {
+                z-index: 1000;
+            }
+
+            .first-stack img {
+                width: 72px;
+                height: 72px;
+                object-fit: cover;
+                border-radius: 40px;
+                z-index: 1000;
+            }
+
+            .second-stack img {
+                width: 72px;
+                height: 72px;
+                object-fit: cover;
+                border-radius: 40px;
+                margin-left: -30px;
+                z-index: -1000;
+            }
+
+            .stack-images {
+                display: flex;
+                flex-direction: row;
+                justify-content: flex-start;
+                align-items: flex-start;
+                padding: 0;
+                margin: 0;
+
+                margin-bottom: 15px;
+            }
+
+            .organization {
+                color: #878787;
+
+                font-family: Roboto;
+                font-size: 30px;
+                font-style: normal;
+                font-weight: 600;
+                line-height: normal;
+            }
+
+            .repository {
+                color: #DEDEDE;
+                font-family: Roboto;
+                font-size: 40px;
+                font-style: normal;
+                font-weight: 600;
+                line-height: normal;
+                margin-top: -6px;
+            }
+
+            .main-text {
+                margin-bottom: 35px;
+            }
+
+            .data {
+                display: flex;
+                width: 100%;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+
+                color: #D3D3D3;
+                font-family: Roboto;
+                font-size: 20px;
+                font-style: normal;
+                font-weight: 400;
+                line-height: normal;
+            }
+
+            .start-date, .end-date {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+            }
+
+            .contributor {
+                display: flex;
+                flex-direction: row;
+                justify-content: flex-start;
+                align-items: center;
+            }
+
+            .top-images {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .user {
+                border-radius: 50%;
+                border: 2px solid #DCDCDC;
+                width: 50px;
+                height: 50px;
+            }
+
+            .second-user {
+                border-radius: 50%;
+                border: 2px solid #DCDCDC;
+                margin-left: -25px;
+                width: 50px;
+                height: 50px;
+                z-index: 1;
+            }
+
+            .other-user {
+                padding: 0;
+                border-radius: 50%;
+                border: 2px solid #DCDCDC;
+                background: #DCDCDC;
+                margin-left: -25px;
+                width: 50px;
+                height: 50px;
+                z-index: 2;
+                position: relative;
+            }
+            .other-text {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                color: #3F3F3F;
+                font-family: Roboto;
+                font-size: 20px;
+                font-style: normal;
+                font-weight: 500;
+                line-height: normal;
+                z-index: 3;
+            }
+        </style>
+        <div class="frame">
+            <div class="inner_frame">
+
+                <div class="top-images">
+                    <div class="stack-images">
+                        <div class="first-stack">
+                            <img alt="" src="{{ stack1 }}" />
+                        </div>
+                        <div class="second-stack">
+                            <img alt="" src="{{ stack2 }}" />
+                        </div>
+                    </div>
+
+                    <div class="contributor">
+                        {% if contributor_len == 1 %}
+                            <img class="user" alt="" src="{{ first_contributor_avatar_url }}" />
+                        {% elif contributor_len == 2 %}
+                            <img class="user" alt="" src="{{ first_contributor_avatar_url }}" />
+                            <img class="second-user" alt="" src="{{ second_contributor_avatar_url }}" />
+                        {% elif contributor_len >= 3 %}
+                            <img class="user" alt="" src="{{ first_contributor_avatar_url }}" />
+                            <img class="second-user" alt="" src="{{ second_contributor_avatar_url }}" />
+                            <div class="other-user">
+                                <span class="other-text">+{{ contributor_len|stringformat:"d"|add:"-2" }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="main-text">
+                    <div class="organization">
+                        {{ organization }}
+                    </div>
+                    <div class="repository">
+                        {{ repo_name }}
+                    </div>
+                </div>
+
+                <div class="data">
+                    <div class="start-date">
+                        <img alt="" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkiIGhlaWdodD0iMjMiIHZpZXdCb3g9IjAgMCAxOSAyMyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTAuNTA4OTI5IDguODEyMzVIMTguNDkxMUMxOC43NzEgOC44MTIzNSAxOSA5LjA0MTMyIDE5IDkuMzIxMTlWMjAuMzQ2MUMxOSAyMS40Njk4IDE4LjA4ODIgMjIuMzgxNCAxNi45NjQzIDIyLjM4MTRIMi4wMzU3MUMwLjkxMTgzIDIyLjM4MTQgMCAyMS40Njk4IDAgMjAuMzQ2MVY5LjMyMTE5QzAgOS4wNDEzMiAwLjIyOTAxOCA4LjgxMjM1IDAuNTA4OTI5IDguODEyMzVaTTE5IDYuOTQ2NlY1LjQyMDA4QzE5IDQuMjk2MzkgMTguMDg4MiAzLjM4NDcxIDE2Ljk2NDMgMy4zODQ3MUgxNC45Mjg2VjEuMTc5NzRDMTQuOTI4NiAwLjg5OTg3NyAxNC42OTk2IDAuNjcwODk4IDE0LjQxOTYgMC42NzA4OThIMTIuNzIzMkMxMi40NDMzIDAuNjcwODk4IDEyLjIxNDMgMC44OTk4NzcgMTIuMjE0MyAxLjE3OTc0VjMuMzg0NzFINi43ODU3MVYxLjE3OTc0QzYuNzg1NzEgMC44OTk4NzcgNi41NTY3IDAuNjcwODk4IDYuMjc2NzkgMC42NzA4OThINC41ODAzNkM0LjMwMDQ1IDAuNjcwODk4IDQuMDcxNDMgMC44OTk4NzcgNC4wNzE0MyAxLjE3OTc0VjMuMzg0NzFIMi4wMzU3MUMwLjkxMTgzIDMuMzg0NzEgMCA0LjI5NjM5IDAgNS40MjAwOFY2Ljk0NjZDMCA3LjIyNjQ2IDAuMjI5MDE4IDcuNDU1NDQgMC41MDg5MjkgNy40NTU0NEgxOC40OTExQzE4Ljc3MSA3LjQ1NTQ0IDE5IDcuMjI2NDYgMTkgNi45NDY2WiIgZmlsbD0iI0QzRDNEMyIvPgo8L3N2Zz4K" />
+                        <div style="width: 10px"></div>
+                        Start: {{ start }}
+                    </div>
+                    <div class="end-date">
+                        <img alt="" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzMiIGhlaWdodD0iMzMiIHZpZXdCb3g9IjAgMCAzMyAzMyIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxuczp4bGluaz0iaHR0cDovL3d3dy53My5vcmcvMTk5OS94bGluayI+CjxtYXNrIGlkPSJtYXNrMF8xMDkzXzEzNjQiIHN0eWxlPSJtYXNrLXR5cGU6YWxwaGEiIG1hc2tVbml0cz0idXNlclNwYWNlT25Vc2UiIHg9IjAiIHk9IjAiIHdpZHRoPSIzMyIgaGVpZ2h0PSIzMyI+CjxyZWN0IHdpZHRoPSIzMyIgaGVpZ2h0PSIzMyIgZmlsbD0idXJsKCNwYXR0ZXJuMCkiLz4KPC9tYXNrPgo8ZyBtYXNrPSJ1cmwoI21hc2swXzEwOTNfMTM2NCkiPgo8cmVjdCB3aWR0aD0iMzMiIGhlaWdodD0iMzMiIGZpbGw9IiNEM0QzRDMiLz4KPC9nPgo8ZGVmcz4KPHBhdHRlcm4gaWQ9InBhdHRlcm4wIiBwYXR0ZXJuQ29udGVudFVuaXRzPSJvYmplY3RCb3VuZGluZ0JveCIgd2lkdGg9IjEiIGhlaWdodD0iMSI+Cjx1c2UgeGxpbms6aHJlZj0iI2ltYWdlMF8xMDkzXzEzNjQiIHRyYW5zZm9ybT0ic2NhbGUoMC4wMSkiLz4KPC9wYXR0ZXJuPgo8aW1hZ2UgaWQ9ImltYWdlMF8xMDkzXzEzNjQiIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB4bGluazpocmVmPSJkYXRhOmltYWdlL3BuZztiYXNlNjQsaVZCT1J3MEtHZ29BQUFBTlNVaEVVZ0FBQUdRQUFBQmtDQVlBQUFCdzRwVlVBQUFCZFdsRFExQnJRMGREYjJ4dmNsTndZV05sUkdsemNHeGhlVkF6QUFBb2tYV1F2VXZEVUJURlQ2dFMwRHFJRGgwY01vbEQxTklLZG5Gb0t4UkZNRlFGcTFPYWZnbHRmQ1FwVW5FVFZ5bjRIMWpCV1hDd2lGUndjWEFRUkFjUjNadzZLYmhvZU42WFZOb2kzc2ZsL1RpY2M3bGN3QnRRR1N2MkFpanBscEZNeEtTMTFMcmtlNE9IbmxPcVpyS29vaXdLL3YyNzYvUFI5ZDVQaUZsTnUzWVEyVTljbDg0dWwzYWVBbE4vL1YzVm44bWFHdjNmMUVHTkdSYmdrWW1WYllzSjNpVWVNV2dwNHFyZ3ZNdkhndE11bnp1ZWxXU2MrSlpZMGdwcWhyaEpMS2M3OUh3SGw0cGxyYldEMk42ZjFWZVh4UnpxVWN4aEV5WVlpbEJSZ1FRRjRYLzgwNDQvamkxeVYyQlFMbzhDTE1wRVNSRVRzc1R6MEtGaEVqSnhDRUhxa0xoejYzNFByZnZKYlczdkZaaHRjTTR2MnRwQ0F6aWRvWlBWMjlwNEJCZ2FBRzdxVERWVVIrcWg5dVp5d1BzSk1KZ0NodThvczJIbXdpRjNlMzhNNkh2aC9HTU04QjBDZHBYenJ5UE83UnFGbjRFci9RY1hLV3E4VXdaQnl3QUFBRGhsV0VsbVRVMEFLZ0FBQUFnQUFZZHBBQVFBQUFBQkFBQUFHZ0FBQUFBQUFxQUNBQVFBQUFBQkFBQUFaS0FEQUFRQUFBQUJBQUFBWkFBQUFBQU1jL3g3QUFBS2FFbEVRVlI0QWUyY2FjeGVSUlhIcWJSRndRV1FUVnFnTGFZb0dyQnBpUmcvVktwc1VVQU00aEt4OHNFSVFpUlNOaVdhb2tMaUV2Mm1waFFvSllDZ0lZMUd3WWlwZkNBYUF5cWlJaEhhcDd0dHFaVkZDQVhSLzAvZklaUEptZVY1N24xVzVpVC96TDFuempsejVwdzc2L08yZSsxVnFVYWdScUJHb0VhZ1JxQkdvRWFnUnFCR29FYWdScUJHb0VhZ1JxQkdvRWFnUnFCR29FYWdScUJHb0VhZ1JtQ3lJekJ0VExzM1EzN1BFVjR2SENEc0o3eEtlRnI0bC9CM1laUHdvdENVRms0WmVOQXc5SGJ4WmdtL0UzWWE5UlBKMmx1OVdpUmNJYXdSSGhYMkNQL0o0QVhWcnhOK0pGd212RXZBVmltUjRPOEpycDF2ZVlxdjBmTWRYaDBmd3JsZS9jUTlFb3dsd2lwaHQrQ0MwclRjSVZzM0NLOFRVa1Q3MXd0K2U4OU9LWkNNZTRNNjVFaktRY0pFRVlGaUpHd1UvR0MwL1R3N0VUVXJHYTc5V0RKYy9Ta0p1Mk5WUlNLV0M3c0UxN2wrbHJHRXBKS0JQOWJJOFAwOFZqSmpUOHk5bXdXL1kvMSt0aEtTUzBiT3A5dkhQUk9IcVFQM0REZ1JMcWhXUWxZMDhPVVgwbVU2RzF0NnJ6eG5hK29DTk9neVRNaDVEWHdaKzJTd0JmMTNnd0Mwa2J3d0lYZjI2RS9yeVpndVJ3WkZIRUsvS1N4cjBPQUc2YTRWSGhBNGozUUVOZ0xQQ0t3QmJ4QTRMTTRWamhlT0V4aU5od3NwUXFjWGVwK1UyQTQvSjN4WDRHTWJDeUlaSzRWZXZtNE9kOWNJODRWZWlMWVhDZGNLYnBvTVIwaGJhNWs3MWZmaTUwQjFHQm5kSm9QcmlITUV2dnkyYUI4WllyM2d1c1dudGhLeXdEYzZxczhNNDI2U3dWZjhDWUV2ZTFEVVJrSzRaaGw1WXY3dVpnRy9UZkw3RDZGWFRSUENOVXNySTdtZmkvcGhjdkxXUWtlNUxMeFlvR09sZEpRRVdWZFlzTG50aGJoUDJpYjhSZGdxbEJEbmh5TktCQ015ckkyZkVWNksxSThNdS9Tckk0anNWbkkwVXdJZkZCaEZCRDAzRFc2UnpJM0NCNFRZTFcvdWJpclhSbXNqUXo3MmxiZ095WFdHK3FlRWQyWThZVXY2UldHN1VHTFRrbGx0dFBHS1NRWVhoWnNMZ3ZlOFpISWpnOFc5WkRSWVNYQzhYOHJHdm9KUFRaT3hRc1phV1ROOHAvcjF2RnlHWFRCUzVhY1REbkRBNi9YMDdMZlphekpZZ3ppRmgvaWhlQjhYeG9aZUswK2ZFUHlnV005M0pIcjBKdFU5VkdERHN1dno3cE1OL1BHSmtVR1FmYm53R1QyM1NmQjF4L0w1eWt4bjZUem5qTmpXZHBicTFoZllDSU1ZdnNkR1JpNFoxSk8wb1ZHYjIxN20xTThXOUlTRDRqOE5PYWFwbnd0empEcUw5YUtZdnhWSTRJNHBnVU5Wd3I5UWVIYUtSMEdRZnl5azFxeDdWWCttOEp3d0ViUkV2UWkvMVBEOVFjbkVUdUNsYThZZlpPT1R3b0ZDQ1pWTVU2bVJjYkFhbVpjQkg5UEkwU3A1RkNZZ2ZPZHV5aUoyVTZGcytMNVRNdWNKM2V4dW1pWURYMGwrNkV2NGZnT0NvMFFjdkhZTG9hUCsrenJWVzhIa25KSGIyajRzbWJsQ045UkdNbWh2SDhIZEV2djk4WiszUzhicUcvcERvVVZxMVhmUWVyNG00aG1IUGt2ZThVZ0dTZXVHMmtxR2EvTTZQVGgvWW1YdWdPdHNEYVM4b3NEaCtZWW5YSWZ3ZGNVNnlUUTFxSkd4cjlxNldiQ3VXVTVJK09oOHYxUXlJME5yNUlsenpDbzdFVS9QenVpeFpuUkR2WTRNa3NGV0dkL2ZielE0VFR6dXhxeStPUjZia3BHaHY4b1Q1NWhWY3NsbkVSZUZsanc4ZGxPNWVaa0VzRkZnT2x3dXJCVmk5dUJidXlrL0djakVGdWhiTXJiL3B2cVJvQm55WW8rUUNzUkZocWQ4ZGFuRm5OMU5pdmlTdHdxcGR2MjZrbVFndnluUzZPV1p0b2lCTmQxRnpQV1AvZWFNbzNUU09wQWRtZEI3UVhXcGN3Yko0QURvQnp6MVhKb01aNFBmY2tJNlZReFhIeXZuaEVyRGVDOVo4T1laanAwc1hxeGo5eHZ5anNVVTAzUmtZR3VWRUd0L0NRSUJIYVAzbUx6am54am9kUDJhbTZOTERITGRucU1uRFlIRERaNWpkZHlEVVo0dUhoZVFKZlFyQ2NXdVE5amh4Y2p5emJydUNmWER5OHl3UHZzK3FJVHdxMkJJcVVReUFtSjBmS3pDNE44blh1eHVLdFdHZGU0cFNjaCtoZzlkc2RwSVNGY05GZ3F6NE1lSTZhR1VVcktwTmxKMXFiWlQ3YVgwWHE1ckl5SFcxLzl5QTFNUDFtaEk2VmxUaHJQNVIvZFFVS1prVTIwOFpkaTIraENLcGZvVXlwcnZnMHFJZFJ1YW1qS09NcjM5UC9ObktyWWs2bDNWWmozYzdWNk1jbzdCY3l6THQvMWRaYUpzbkpDRTdlS3FrbTB2TzZxUWN0dmVONFlLM2pzTGUycmJTeDNiMUJnZHBJcVUvbXhEc1dUYk84L1FHemhydWxyY0l6Qi94bkN4NFJYek5GOWlUR2Vwb2VPelNBcWpJTlRmS0Y0cUdkZzQzOUJ6ZHJCcDBlZkVkREpXeVI5dEVJdVJvRWZraGVXazQ5MFU4ZkxXaEI2L3ErZW1WSzVPUGlRc253SjNZNjhXVXNScCttSEIrUmFXcXlQS055ZDBzUEhuaU41UTJHc3l6bllpWHAyVjBWc2EwV3ZDVG8wT0FudEd4RGhYS21IeS9QZTdJbnBEWWVmdWVYQ2NrMjVJTThWSS9makRYN0FjSFNvMWVNZldMc0VQcFArOFRYVXpEUHZISm5TYy9qSkRiMmlzaFFVT2Z5WGkzVlVaM1QrcDN0cWxSY3hGMmRoZ1duRUJ0RW8rTEl1dUZkT1M5M2tMTE1WaDhaaVgvNUZ4ZXIzcXJUV0IvWDFxY2FmVEpHV2UwQ3N4TW5MSllERzNyajdvVzBmd2d4OCtNNUt0dm9rOVBMcEpUWWVPaHU4ZmpyajNzUUpkT3IxVTZLYmpCSk0xSXpWTk9SL1BsWnhGSHhIVHljVEtsWmJpc0hrbkZUaitlOGxNaXpoNmU0RStBZUgwL1NraGRVN2huSUZNYWpmbEIvY1d5VnFFcit6MmZGbnJlYkdsUEd3ZVgyNUhzQnoyZWJFZm5waTZTanJ2YkhHdys3VndtL0R0S2ZEOEd5RjE2SFA2cnVRanNhWXFzWlBuRmFlL1huS3hqd3diUXlVV1JlZG9yTnd1bVFNaVhuSy90SzdBUnN4MnQvekgxRmJzS3Y5QTFlMG84T1V5eVl3c2NmMjhVOGdGNXM1RUQvaTFqcTgyWjZOcFBkUFpySVFmcVVPcmE1dDFqWkU5MHZSbGVlY2NUcFVYSkhwQko1bCtVdnBONmxnell0TVVibDFVMlBiVkNJODYwZEZOUWk1ZzNQMmNrdW5NUjFXL3BjQldyaTFYejlZMnRwdHlycHltaDl6ZEhQWTJDSTEva0hLTjlyczhSdzI0SUtUS3B5V1greDJhMFhLbGtEclJwOXFnYnB2QStwWWFGYXIrMy84NmgwODVlOVNmamNJNEViOWJsSFNNQU9SR0N2M21TdU5NZ2VtbVpOUWdzMW80UTBBM1I0eU0wbVQ4SkdlczEvcCtidGNPbFZNc3pyRmRqTzh6VThRbHd2ZDladWI1Q05YUEY5aVp1WVdWZ0c0VkhoV1lua3FKTmVNN1FrbmlzTDlBWUFjMmRyUkVIbmR6SnZpQjVHTmI0bjUwbnEwdE83NlNrWXdNZlZrc2pEVmRLdTlMTzR3YzU1U2xRajlITDdiUEYwck9HYjd2ak9LSm9HK29GMzdIU3A2NUl1RlV2M2VMRWVBMmdUWGxBYUhFQjEvbXVoYjlHTG9wdnNqcmV3Z0NBZWtJWHhYZUt2UktiNVBpMTRRTmdoL2swdWNWMHFNUGZhZUJORExWQzlyNnVzRDJzMWZpZkxOVzRBdG40ZTRJVHdqUENCRGJXaTRXNXdySENBc0YxckhaUXErRXoxOFFTTjVFMHVmVnEyNFcrdEt2dUcwNWZKeVlOU1AzSlMyV1FNbFpvdTBnbDlwalkzRnlyaE9UVnM4NTVhZENhWkFHSmNlaDc1QkpDM1kzL1dIWDB4RUdGZkJZT3h3a1k3L1ZxT3FWUlN6R1h4SllvR01CNnhkL3A5cmsxblpzTGdybDY4Q0l4TEFMMnlEMEt3SE9ia2R0TEJOb3MxSW1BaHpnM2lQY0tPd1NYQkNibG96QWxjSmlZWkJiZmpWWFJpUHBWT0E2eVhtSGNKTHdidUV0d3RIQ1RDRkZYRmcrTGp3aTNDK3NGUjRTWGhKR2xzWWhJVmJ3cG90NXBNQkZKUDlNd0UwNzNQWStLZXdXTmdxY0pTclZDTlFJMUFqVUNOUUkxQWpVQ05RSTFBalVDTlFJMUFqVUNOUUkxQWpVQ05RSTFBalVDTlFJMUFqVUNOUUkxQWlNVUFUK0MwUGNMZjNobFZTREFBQUFBRWxGVGtTdVFtQ0MiLz4KPC9kZWZzPgo8L3N2Zz4K" />
+                        <div style="width: 4px"></div>
+                        End: {{ end }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</foreignObject>
+</svg>
