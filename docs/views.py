@@ -375,7 +375,7 @@ class DocsContributorView(APIView):
 class DocsSearchView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @swagger_auto_schema(tags=["Docs"], operation_summary="문서 검색 API", manual_parameters=[openapi.Parameter('query', openapi.IN_QUERY, description="검색어", type=openapi.TYPE_STRING, required=True)])
+    @swagger_auto_schema(tags=["Docs"], operation_summary="문서 검색 API", request_body=SwaggerDocsSearchPostSerializer)
     def get(self, request, *args, **kwargs):
         authorization_header = request.META.get('HTTP_AUTHORIZATION')
         if authorization_header and authorization_header.startswith('Bearer '):
