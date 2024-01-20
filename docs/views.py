@@ -24,7 +24,7 @@ from rest_framework.views import APIView
 from drf_yasg.utils import swagger_auto_schema, no_body
 
 
-class DocsList(APIView):
+class DocsAPI(APIView):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(tags=["Docs"], operation_summary="문서 조회 API", request_body=no_body)
@@ -53,7 +53,115 @@ class DocsList(APIView):
             "data": serializer.data
         }, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(request_body=SwaggerDocsPostSerializer)
+    def post(self, request, *args, **kwargs):
+        repository_url = request.data.get('repository_url')
+        language = request.data.get('language')
+        color = request.data.get('color')
 
+        authorization_header = request.META.get('HTTP_AUTHORIZATION')
+        if authorization_header and authorization_header.startswith('Bearer '):
+            token = authorization_header.split(' ')[1]
+            user_id = user_token_to_data(token)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        if not User.objects.filter(id=user_id).exists():  # user_id가 User 테이블에 존재하지 않는 경우
+            return Response({
+                "status": 404,
+                "message": "user_id가 존재하지 않습니다.",
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        if repository_url is None or language is None or language not in ['KOR', 'ENG'] or color is None:
+            return Response({"message": "잘못된 요청입니다. 입력 형식을 확인해 주세요.", "status": 400},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        if url_validator(repository_url) is False:
+            return Response({"message": "유효하지 않은 URL입니다.", "status": 404}, status=status.HTTP_400_BAD_REQUEST)
+
+        framework = framework_finder_task.delay(repository_url)
+        if framework == "failed":
+            return Response({'message': 'GPT API Server Error.', 'status': 500},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        while True:
+            if framework.ready():
+                break
+            time.sleep(1)
+
+        if framework.result:
+            framework = framework.result
+        else:
+            return Response({"message": "framework 추출 실패", "status": 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        ####################################################
+        if repository_url.startswith("https://"):
+            repository_url = repository_url.replace("https://", "")
+
+        repo_url_list = repository_url.split("/")
+        owner = repo_url_list[1]
+        repo = repo_url_list[2].split(".")[0]
+        path = ''
+        root_file = get_file_content(owner, repo, path)
+
+        # TODO: 찾아낸 Framework를 활용하여 GitHub 코드 추출
+        if root_file:
+            prompt_ary = get_github_code_prompt(repository_url, framework)
+
+            res_data = get_assistant_response_task.delay(prompt_ary, language)
+
+        while True:
+            if res_data.ready():
+                break
+            time.sleep(1)
+
+        if res_data.result:
+            if res_data.result == "failed":
+                return Response({'message': 'GPT API Server Error.', 'status': 500},
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+            response = res_data.result['response']
+            stack = res_data.result['stack']
+            res_title = res_data.result['res_title']
+        else:
+            return Response({"message": "문서 생성 실패", "status": 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        request.data['user_id'] = User.objects.filter(id=user_id).first().id
+        request.data['title'] = res_title
+        request.data['content'] = response
+        request.data['language'] = language
+        request.data['color'] = color
+        # TODO: Database에 docs 저장 후
+        serializer = DocsSerializer(data=request.data)
+        if serializer.is_valid():
+            docs = serializer.save()
+        else:
+            return Response({"message": "문서 생성 실패", "status": 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # TODO: tech_stack에 기술 저장
+        stack_ary = []
+
+        if stack in ',':
+            stack_ary = stack.split(', ')
+        else:
+            stack_ary = stack.split('/')
+
+        res_data = {
+            "docs_id": docs.id,
+            "title": docs.title,
+            "content": docs.content,
+            "language": docs.language,
+            "tech_stack": stack_ary,
+            "color": docs.color,
+            "created_at": docs.created_at,
+        }
+        return Response({"message": "문서 생성 성공", "status": 201, "data": res_data}, status=status.HTTP_201_CREATED)
+        # TODO: 추출한 코드를 활용하여 문서 생성
+
+
+
+@swagger_auto_schema(request_body=no_body)
 class DocsVersionList(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -199,116 +307,6 @@ class DocsDetail(APIView):  # Docs의 detail을 보여주는 역할
             "status": 200,
             "message": "문서가 성공적으로 삭제되었습니다."
         }, status=status.HTTP_200_OK)
-
-
-class DocsCreateView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    @swagger_auto_schema(tags=["Docs"], operation_summary="문서 생성 API", request_body=SwaggerDocsPostSerializer)
-    def post(self, request, *args, **kwargs):
-        repository_url = request.data.get('repository_url')
-        language = request.data.get('language')
-        color = request.data.get('color')
-
-        authorization_header = request.META.get('HTTP_AUTHORIZATION')
-        if authorization_header and authorization_header.startswith('Bearer '):
-            token = authorization_header.split(' ')[1]
-            user_id = user_token_to_data(token)
-        else:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-
-        if not User.objects.filter(id=user_id).exists():  # user_id가 User 테이블에 존재하지 않는 경우
-            return Response({
-                "status": 404,
-                "message": "user_id가 존재하지 않습니다.",
-            }, status=status.HTTP_404_NOT_FOUND)
-
-        if repository_url is None or language is None or language not in ['KOR', 'ENG'] or color is None:
-            return Response({"message": "잘못된 요청입니다. 입력 형식을 확인해 주세요.", "status": 400},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        if url_validator(repository_url) is False:
-            return Response({"message": "유효하지 않은 URL입니다.", "status": 404}, status=status.HTTP_400_BAD_REQUEST)
-
-        framework = framework_finder_task.delay(repository_url)
-        if framework == "failed":
-            return Response({'message': 'GPT API Server Error.', 'status': 500},
-                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        while True:
-            if framework.ready():
-                break
-            time.sleep(1)
-
-        if framework.result:
-            framework = framework.result
-        else:
-            return Response({"message": "framework 추출 실패", "status": 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        ####################################################
-        if repository_url.startswith("https://"):
-            repository_url = repository_url.replace("https://", "")
-
-        repo_url_list = repository_url.split("/")
-        owner = repo_url_list[1]
-        repo = repo_url_list[2].split(".")[0]
-        path = ''
-        root_file = get_file_content(owner, repo, path)
-
-        # TODO: 찾아낸 Framework를 활용하여 GitHub 코드 추출
-        if root_file:
-            prompt_ary = get_github_code_prompt(repository_url, framework)
-
-            res_data = get_assistant_response_task.delay(prompt_ary, language)
-
-        while True:
-            if res_data.ready():
-                break
-            time.sleep(1)
-
-        if res_data.result:
-            if res_data.result == "failed":
-                return Response({'message': 'GPT API Server Error.', 'status': 500},
-                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-            response = res_data.result['response']
-            stack = res_data.result['stack']
-            res_title = res_data.result['res_title']
-        else:
-            return Response({"message": "문서 생성 실패", "status": 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        request.data['user_id'] = User.objects.filter(id=user_id).first().id
-        request.data['title'] = res_title
-        request.data['content'] = response
-        request.data['language'] = language
-        request.data['color'] = color
-        # TODO: Database에 docs 저장 후
-        serializer = DocsSerializer(data=request.data)
-        if serializer.is_valid():
-            docs = serializer.save()
-        else:
-            return Response({"message": "문서 생성 실패", "status": 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        # TODO: tech_stack에 기술 저장
-        stack_ary = []
-
-        if stack in ',':
-            stack_ary = stack.split(', ')
-        else:
-            stack_ary = stack.split('/')
-
-        res_data = {
-            "docs_id": docs.id,
-            "title": docs.title,
-            "content": docs.content,
-            "language": docs.language,
-            "tech_stack": stack_ary,
-            "color": docs.color,
-            "created_at": docs.created_at,
-        }
-        return Response({"message": "문서 생성 성공", "status": 201, "data": res_data}, status=status.HTTP_201_CREATED)
-        # TODO: 추출한 코드를 활용하여 문서 생성
 
 
 class DocsShareView(APIView):
