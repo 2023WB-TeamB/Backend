@@ -2,6 +2,7 @@ import time
 from collections import defaultdict
 
 from django.core.exceptions import ObjectDoesNotExist
+from drf_yasg import openapi
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
@@ -375,7 +376,7 @@ class DocsSearchView(APIView):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(tags=["Docs"], operation_summary="문서 검색 API", request_body=SwaggerDocsSearchPostSerializer)
-    def post(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         authorization_header = request.META.get('HTTP_AUTHORIZATION')
         if authorization_header and authorization_header.startswith('Bearer '):
             token = authorization_header.split(' ')[1]
@@ -383,7 +384,7 @@ class DocsSearchView(APIView):
         else:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
-        query = request.data.get('query')
+        query = request.GET.get('query')
         if query is None:
             return Response({"message": "검색어를 입력해 주세요.", "status": 400}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -397,3 +398,4 @@ class DocsSearchView(APIView):
             "status": 200,
             "data": serializer.data
         }, status=status.HTTP_200_OK)
+
