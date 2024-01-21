@@ -6,7 +6,7 @@ from users.models import User
 class Docs(models.Model):
     id = models.AutoField(primary_key=True)
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=1000)
     content = models.TextField()
     repository_url = models.URLField(max_length=1000)
     url = models.URLField(max_length=1000, null=True)
