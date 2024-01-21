@@ -79,6 +79,7 @@ def framework_finder(url):
         content=structure
     )
 
+
     run = framework_assistant_client.beta.threads.runs.create(
         thread_id=thread_id,
         assistant_id=FRAMEWORK_ASSISTANT_ID,
@@ -335,4 +336,80 @@ tech stack만 알려줘,
             break
 
     res_title = res_message[0].text.value
-    return res_blog, res_tech_stack, res_title
+    return res_blog, res_tech_stack, res_title, thread_id
+
+
+def get_github_latest_sha(url):
+    if url.startswith("https://"):
+        url = url.replace("https://", "")
+
+    repo_url_list = url.split("/")
+    owner = repo_url_list[1]
+    repo = repo_url_list[2].split(".")[0]
+
+    url = f'https://api.github.com/repos/{owner}/{repo}'
+    response = requests.get(url, headers=GITHUB_TOKEN_HEADERS)
+
+    if response.status_code == 200:
+        default_branch = response.json()['default_branch']
+    else:
+        return "failed"
+
+    url = f'https://api.github.com/repos/{owner}/{repo}/commits?sha={default_branch}'
+    response = requests.get(url, headers=GITHUB_TOKEN_HEADERS)
+
+    if response.status_code == 200:
+        return response.json()[0]['sha']
+    else:
+        return "failed"
+
+
+def assistant_run(language, thread):
+    assistant_client = OpenAI(api_key=GPT_SECRET_KEY)
+    thread_id = thread
+    assistant_id = ENG_CODE_ASSISTANT_ID
+    if language == "KOR":
+        assistant_id = KOR_CODE_ASSISTANT_ID
+
+    messages = assistant_client.beta.threads.messages.list(
+        thread_id=thread_id
+    )
+
+    new_thread = assistant_client.beta.threads.create()
+
+    for message in messages:
+        if message.role == 'user':
+            assistant_client.beta.threads.messages.create(
+                new_thread.id,
+                role="user",
+                content=message.content[0].text.value
+            )
+
+    run = assistant_client.beta.threads.runs.create(
+        thread_id=new_thread.id,
+        assistant_id=assistant_id
+    )
+
+
+    while run.status == "queued" or run.status == "in_progress":
+        run = assistant_client.beta.threads.runs.retrieve(
+            thread_id=new_thread.id,
+            run_id=run.id
+        )
+        time.sleep(1)
+
+    if run.status == "failed":
+        return "failed"
+
+    messages = assistant_client.beta.threads.messages.list(
+        thread_id=new_thread.id
+    )
+
+    res_message = ""
+
+    for message in messages:
+        if message.role == 'assistant':
+            res_message = message.content
+
+    result = res_message[0].text.value
+    return result
