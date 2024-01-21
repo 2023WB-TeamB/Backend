@@ -56,6 +56,7 @@ class DocsAPI(APIView):
     @swagger_auto_schema(request_body=SwaggerDocsPostSerializer)
     def post(self, request, *args, **kwargs):
         repository_url = request.data.get('repository_url')
+        original_repository_url = repository_url
         language = request.data.get('language')
         color = request.data.get('color')
 
@@ -78,6 +79,63 @@ class DocsAPI(APIView):
 
         if url_validator(repository_url) is False:
             return Response({"message": "유효하지 않은 URL입니다.", "status": 404}, status=status.HTTP_400_BAD_REQUEST)
+
+
+########################################################################################################################
+##################################################### Future ###########################################################
+########################################################################################################################
+        # 이미 생성한적이 있는 문서 (지운적 있더라도)
+        if Docs.objects.filter(user_id=user_id, repository_url=repository_url).exists():
+            # 가장 최신 데이터를 가져옴
+            old_docs = Docs.objects.filter(user_id=user_id, repository_url=repository_url).order_by('-created_at').first()
+
+
+            # TODO: 최신 Repo의 Default Branch node hash가져오기
+            # TODO: hash가 같을 경우 (코드 변경점 없음)
+            # TODO: - run만 다시
+            old_docs_sha = old_docs.commit_sha
+            github_latest_sha = get_github_latest_sha(repository_url)
+
+            if old_docs_sha == github_latest_sha:
+                # old_docs의 thread_id를 가져옴
+                response = assistant_run(language, old_docs.thread_id)
+                if response == "failed":
+                    return Response({'message': 'GPT API Server Error.', 'status': 500},
+                                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                # serializer를 통해 데이터로 변환 후 db에 저장 후 꺼내오기
+                request.data['user_id'] = user_id
+                request.data['title'] = old_docs.title
+                request.data['content'] = response
+                request.data['language'] = language
+                request.data['color'] = color
+                request.data['thread_id'] = old_docs.thread_id
+                request.data['commit_sha'] = old_docs.commit_sha
+                # TODO: Database에 docs 저장 후
+                serializer = DocsSerializer(data=request.data)
+                if serializer.is_valid():
+                    new_docs = serializer.save()
+
+                    res_data = {
+                        "docs_id": new_docs.id,
+                        "title": new_docs.title,
+                        "content": new_docs.content,
+                        "language": new_docs.language,
+                        "tech_stack": [],
+                        "color": new_docs.color,
+                        "created_at": new_docs.created_at,
+                    }
+
+                    return Response({"message": "문서 생성 성공", "status": 201, "data": res_data}, status=status.HTTP_201_CREATED)
+                else:
+                    return Response({"message": "문서 생성 실패", "status": 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            # hash가 다를 경우 (코드 변경점 있음)
+            # - 원래 로직대로 진행
+
+
+########################################################################################################################
+##################################################### Future ###########################################################
+########################################################################################################################
+
 
         framework = framework_finder_task.delay(repository_url)
         if framework == "failed":
@@ -124,6 +182,7 @@ class DocsAPI(APIView):
             response = res_data.result['response']
             stack = res_data.result['stack']
             res_title = res_data.result['res_title']
+            thread_id = res_data.result["thread_id"]
         else:
             return Response({"message": "문서 생성 실패", "status": 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -132,6 +191,8 @@ class DocsAPI(APIView):
         request.data['content'] = response
         request.data['language'] = language
         request.data['color'] = color
+        request.data['thread_id'] = thread_id
+        request.data['commit_sha'] = get_github_latest_sha(original_repository_url)
         # TODO: Database에 docs 저장 후
         serializer = DocsSerializer(data=request.data)
         if serializer.is_valid():
@@ -396,4 +457,5 @@ class DocsSearchView(APIView):
             "status": 200,
             "data": serializer.data
         }, status=status.HTTP_200_OK)
+
 
