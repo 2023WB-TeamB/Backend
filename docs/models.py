@@ -15,7 +15,8 @@ class Docs(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
     is_deleted = models.BooleanField(default=False)
-
+    thread_id = models.CharField(max_length=1000, null=False)
+    commit_sha = models.CharField(max_length=1000, null=False)
     def __str__(self):
         return self.title
 
