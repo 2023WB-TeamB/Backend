@@ -24,7 +24,7 @@ class DocsViewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Docs
-        fields = ('id', 'title', 'color', 'keywords', 'created_at', 'updated_at',)
+        fields = ('id', 'title', 'color', 'keywords', 'repository_url', 'created_at', 'updated_at',)
 
 
 class DocsSerializer(serializers.ModelSerializer):
@@ -120,5 +120,3 @@ class SwaggerDocsSharePostSerializer(serializers.Serializer):
 
 class SwaggerDocsContributorPostSerializer(serializers.Serializer):
     repository_url = serializers.CharField()
-
-
