@@ -371,9 +371,13 @@ def assistant_run(language, thread):
     if language == "KOR":
         assistant_id = KOR_CODE_ASSISTANT_ID
 
-    messages = assistant_client.beta.threads.messages.list(
-        thread_id=thread_id
-    )
+    try:
+        messages = assistant_client.beta.threads.messages.list(
+            thread_id=thread_id
+        )
+    # except로 간결하게 만들 수 있지만 이후 디버깅을 위해 남겨둠
+    except Exception as e:
+        return "not found thread"
 
     new_thread = assistant_client.beta.threads.create()
 
@@ -389,7 +393,6 @@ def assistant_run(language, thread):
         thread_id=new_thread.id,
         assistant_id=assistant_id
     )
-
 
     while run.status == "queued" or run.status == "in_progress":
         run = assistant_client.beta.threads.runs.retrieve(
@@ -413,3 +416,10 @@ def assistant_run(language, thread):
 
     result = res_message[0].text.value
     return result
+
+def get_contributors(user, repo):
+    url = f"https://api.github.com/repos/{user}/{repo}/contributors"
+    response = requests.get(url)
+    response.raise_for_status()  # 오류 발생 시 예외를 발생시킵니다.
+    data = response.json()
+    return [contributor['login'] for contributor in data]
