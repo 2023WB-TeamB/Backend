@@ -3,6 +3,7 @@ import time
 from gtd.celery import *
 from gtd.settings import *
 from .github import *
+import logging
 
 
 @app.task(name='delayed_task')
@@ -19,7 +20,7 @@ def framework_finder_task(repository_url):
 
 @app.task(name='get_assistant_response_task')
 def get_assistant_response_task(prompt_ary, language):
-    response, stack, res_title = get_assistant_response(prompt_ary, language)
+    response, stack, res_title, thread_id = get_assistant_response(prompt_ary, language)
 
     if response == "failed":
         return response
@@ -27,6 +28,8 @@ def get_assistant_response_task(prompt_ary, language):
     data = {
         "response": response,
         "stack": stack,
-        "res_title": res_title
+        "res_title": res_title,
+        "thread_id": thread_id
     }
+
     return data
