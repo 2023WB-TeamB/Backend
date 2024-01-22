@@ -53,7 +53,7 @@ class DocsAPI(APIView):
             "data": serializer.data
         }, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(request_body=SwaggerDocsPostSerializer)
+    @swagger_auto_schema(tags=["Docs"], operation_summary="문서 생성 API", request_body=SwaggerDocsPostSerializer)
     def post(self, request, *args, **kwargs):
         repository_url = request.data.get('repository_url')
         language = request.data.get('language')
