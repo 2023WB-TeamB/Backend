@@ -1,4 +1,6 @@
 # Backend
 backend
 
-<img src="http://gtd.kro.kr:8000/badge/2023WB-TeamB/Backend/TaeHee00?position=GOAT" />
+<img src="https://gtd.kro.kr/api/badge/2023WB-TeamB/Backend/sunjae98?theme=terminal1&start=20231226&end=20240203&stack1=react" />
+
+<img src="https://gtd.kro.kr/api/badge/2023WB-TeamB/Backend/sunjae98?theme=terminal1" />
