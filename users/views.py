@@ -23,7 +23,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 class RegisterAPIView(APIView):
     # 회원가입
-    @swagger_auto_schema(tags=["Docs"], operation_summary="문서 수정 API", request_body=SwaggerRegisterPostSerializer)
+    @swagger_auto_schema(tags=["User"], operation_summary="회원가입 API", request_body=SwaggerRegisterPostSerializer)
     def post(self, request):
         serializer = UserSerializer(data=request.data)
 
