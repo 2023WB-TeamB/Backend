@@ -96,38 +96,51 @@ class DocsAPI(APIView):
             old_docs_sha = old_docs.commit_sha
             github_latest_sha = get_github_latest_sha(repository_url)
 
-            if old_docs_sha == github_latest_sha:
+            if old_docs_sha == github_latest_sha and old_docs.thread_id != "":
                 # old_docs의 thread_id를 가져옴
                 response = assistant_run(language, old_docs.thread_id)
                 if response == "failed":
                     return Response({'message': 'GPT API Server Error.', 'status': 500},
                                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                # serializer를 통해 데이터로 변환 후 db에 저장 후 꺼내오기
-                request.data['user_id'] = user_id
-                request.data['title'] = old_docs.title
-                request.data['content'] = response
-                request.data['language'] = language
-                request.data['color'] = color
-                request.data['thread_id'] = old_docs.thread_id
-                request.data['commit_sha'] = old_docs.commit_sha
-                # TODO: Database에 docs 저장 후
-                serializer = DocsSerializer(data=request.data)
-                if serializer.is_valid():
-                    new_docs = serializer.save()
+                elif response != "not found thread":
+                    # serializer를 통해 데이터로 변환 후 db에 저장 후 꺼내오기
+                    request.data['user_id'] = user_id
+                    request.data['title'] = old_docs.title
+                    request.data['content'] = response
+                    request.data['language'] = language
+                    request.data['color'] = color
+                    request.data['thread_id'] = old_docs.thread_id
+                    request.data['commit_sha'] = old_docs.commit_sha
+                    # TODO: Database에 docs 저장 후
+                    serializer = DocsSerializer(data=request.data)
+                    if serializer.is_valid():
+                        new_docs = serializer.save()
 
-                    res_data = {
-                        "docs_id": new_docs.id,
-                        "title": new_docs.title,
-                        "content": new_docs.content,
-                        "language": new_docs.language,
-                        "tech_stack": [],
-                        "color": new_docs.color,
-                        "created_at": new_docs.created_at,
-                    }
+                        if repository_url.startswith("https://"):
+                            repository_url = repository_url.replace("https://", "")
 
-                    return Response({"message": "문서 생성 성공", "status": 201, "data": res_data}, status=status.HTTP_201_CREATED)
-                else:
-                    return Response({"message": "문서 생성 실패", "status": 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                        repo_url_list = repository_url.split("/")
+                        owner = repo_url_list[1]
+                        repo = repo_url_list[2].split(".")[0]
+
+                        contributors = get_contributors(owner, repo)
+                        badge_tags = "\n"
+                        for contributor in contributors:
+                            badge_tags += f'<img src="https://gtd.kro.kr/api/badge/{owner}/{repo}/{contributor}?theme=terminal1"  />\n'
+
+                        res_data = {
+                            "docs_id": new_docs.id,
+                            "title": new_docs.title,
+                            "content": new_docs.content + badge_tags,
+                            "language": new_docs.language,
+                            "tech_stack": [],
+                            "color": new_docs.color,
+                            "created_at": new_docs.created_at,
+                        }
+
+                        return Response({"message": "문서 생성 성공", "status": 201, "data": res_data}, status=status.HTTP_201_CREATED)
+                    else:
+                        return Response({"message": "문서 생성 실패", "status": 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             # hash가 다를 경우 (코드 변경점 있음)
             # - 원래 로직대로 진행
 
@@ -208,10 +221,15 @@ class DocsAPI(APIView):
         else:
             stack_ary = stack.split('/')
 
+        contributors = get_contributors(owner, repo)
+        badge_tags = ""
+        for contributor in contributors:
+            badge_tags += f'<img src="https://gtd.kro.kr/api/badge/{owner}/{repo}/{contributor}?theme=terminal1"  />\n'
+
         res_data = {
             "docs_id": docs.id,
             "title": docs.title,
-            "content": docs.content,
+            "content": docs.content + badge_tags,
             "language": docs.language,
             "tech_stack": stack_ary,
             "color": docs.color,
