@@ -214,11 +214,13 @@ def get_assistant_response(prompt_ary, language):
         assistant_id = KOR_CODE_ASSISTANT_ID
 
     for prompt in prompt_ary:
-        code_assistant_client.beta.threads.messages.create(
-            thread_id,
-            role="user",
-            content=prompt
-        )
+        while len(prompt) > 32000:
+            code_assistant_client.beta.threads.messages.create(
+                thread_id,
+                role="user",
+                content=prompt[:32000]
+            )
+            prompt = prompt[32000:]
 
     run = code_assistant_client.beta.threads.runs.create(
         thread_id=thread_id,
