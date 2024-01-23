@@ -162,7 +162,7 @@ def get_github_code_prompt(url, framework):
                         current_element['content'] = decoded_content
                         data_prmp.append(current_element)
 
-                elif framework == "React" and element['path'].startswith("src/") and (
+                elif framework == "React" and element['path'].startswith("src/") or (
                         element['path'].endswith(".ts") or
                         element['path'].endswith(".tsx") or
                         element['path'].endswith(".js") or
@@ -176,6 +176,84 @@ def get_github_code_prompt(url, framework):
 
                 elif framework == "Spring Boot" and (element['path'].startswith("src/main/java") or
                                                      element['path'].endswith("build.gradle")):
+                    file_content = get_file_content(owner, repo, element['path'])
+                    if 'content' in file_content:
+                        decoded_content = base64.b64decode(file_content['content']).decode('utf-8')
+                        current_element['content'] = decoded_content
+                        data_prmp.append(current_element)
+
+                elif framework == ("Fiber" or "Go gin" or "Golang" or "Go Kit" or "Echo") and (
+                        element['path'].endswith("main.go") or
+                        element['path'].startswith("routes/") or
+                        element['path'].startswith("models/") or
+                        element['path'].startswith("middleware/") or
+                        element['path'].startswith("config/") or
+                        element['path'].startswith("handlers/") or
+                        element['path'].startswith("controllers/")):
+                    file_content = get_file_content(owner, repo, element['path'])
+                    if 'content' in file_content:
+                        decoded_content = base64.b64decode(file_content['content']).decode('utf-8')
+                        current_element['content'] = decoded_content
+                        data_prmp.append(current_element)
+
+                elif framework == "Svelte" and (
+                        element['path'].endswith(".svelte") or
+                        element['path'].endswith(".js") or
+                        element['path'].endswith(".ts") or
+                        element['path'].endswith("package.json") or
+                        element['path'].endswith("rollup.config.js") or
+                        element['path'].endswith("webpack.config.js") or
+                        element['path'].endswith("App.svelte")):
+                    file_content = get_file_content(owner, repo, element['path'])
+                    if 'content' in file_content:
+                        decoded_content = base64.b64decode(file_content['content']).decode('utf-8')
+                        current_element['content'] = decoded_content
+                        data_prmp.append(current_element)
+
+                elif framework == "Ktor" and (element['path'].startswith("src/main/kotlin") or
+                                              element['path'].endswith("build.gradle.kts")):
+                    file_content = get_file_content(owner, repo, element['path'])
+                    if 'content' in file_content:
+                        decoded_content = base64.b64decode(file_content['content']).decode('utf-8')
+                        current_element['content'] = decoded_content
+                        data_prmp.append(current_element)
+
+                elif framework == "Angular" and (
+                        element['path'].startswith("src/app/") or
+                        element['path'].endswith(".ts") or
+                        element['path'].endswith("main.ts") or
+                        element['path'].endswith("index.html") or
+                        element['path'].endswith("styles.css") or
+                        element['path'].endswith("app.module.ts") or
+                        element['path'].endswith("angular.json") or
+                        element['path'].endswith("package.json")):
+                    file_content = get_file_content(owner, repo, element['path'])
+                    if 'content' in file_content:
+                        decoded_content = base64.b64decode(file_content['content']).decode('utf-8')
+                        current_element['content'] = decoded_content
+                        data_prmp.append(current_element)
+
+                elif framework == "Ruby on Rails" and (
+                        element['path'].startswith("app/") or
+                        element['path'].endswith("routes.rb") or
+                        element['path'].startswith("db/") or
+                        element['path'].endswith("Gemfile") or
+                        element['path'].endswith("database.yml") or
+                        element['path'].endswith("environment.rb") or
+                        element['path'].endswith("secrets.yml")):
+                    file_content = get_file_content(owner, repo, element['path'])
+                    if 'content' in file_content:
+                        decoded_content = base64.b64decode(file_content['content']).decode('utf-8')
+                        current_element['content'] = decoded_content
+                        data_prmp.append(current_element)
+
+                elif framework == "Laravel" and (
+                        element['path'].startswith("app/") or
+                        element['path'].startswith("config/") or
+                        element['path'].startswith("database/") or
+                        element['path'].startswith("public/") or
+                        element['path'].startswith("resources/views/") or
+                        element['path'].startswith("routes/")):
                     file_content = get_file_content(owner, repo, element['path'])
                     if 'content' in file_content:
                         decoded_content = base64.b64decode(file_content['content']).decode('utf-8')
@@ -214,11 +292,13 @@ def get_assistant_response(prompt_ary, language):
         assistant_id = KOR_CODE_ASSISTANT_ID
 
     for prompt in prompt_ary:
-        code_assistant_client.beta.threads.messages.create(
-            thread_id,
-            role="user",
-            content=prompt
-        )
+        while len(prompt) > 32000:
+            code_assistant_client.beta.threads.messages.create(
+                thread_id,
+                role="user",
+                content=prompt[:32000]
+            )
+            prompt = prompt[32000:]
 
     run = code_assistant_client.beta.threads.runs.create(
         thread_id=thread_id,
