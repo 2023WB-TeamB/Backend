@@ -213,14 +213,32 @@ def get_assistant_response(prompt_ary, language):
     if language == "KOR":
         assistant_id = KOR_CODE_ASSISTANT_ID
 
+    combined_prompt = ""
     for prompt in prompt_ary:
-        while len(prompt) > 32000:
-            code_assistant_client.beta.threads.messages.create(
-                thread_id,
-                role="user",
-                content=prompt[:32000]
-            )
-            prompt = prompt[32000:]
+        if len(combined_prompt + prompt) <= 32000:
+            combined_prompt += prompt
+        else:
+            while len(combined_prompt) > 0:
+                message = combined_prompt[:32000]
+                code_assistant_client.beta.threads.messages.create(
+                    thread_id,
+                    role="user",
+                    content=message
+                )
+                combined_prompt = combined_prompt[32000:]
+            combined_prompt = prompt
+
+    while len(combined_prompt) > 0:
+        message = combined_prompt[:32000]
+        code_assistant_client.beta.threads.messages.create(
+            thread_id,
+            role="user",
+            content=message
+        )
+        combined_prompt = combined_prompt[32000:]
+
+    print('##########################################################')
+    print(f"Sent message to AI: {message}")  # 메시지 출력
 
     run = code_assistant_client.beta.threads.runs.create(
         thread_id=thread_id,
@@ -237,7 +255,6 @@ def get_assistant_response(prompt_ary, language):
 
     if run.status == "failed":
         return "failed", "failed", "failed"
-
 
 
     messages = code_assistant_client.beta.threads.messages.list(
