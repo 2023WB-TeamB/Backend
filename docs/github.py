@@ -249,10 +249,13 @@ def get_github_code_prompt(url, framework):
                         current_element['content'] = decoded_content
                         data_prmp.append(current_element)
 
-                elif framework == "Vue.js" and (
-                        element['path'].endswith("app.vue") or
-                        element['path'].startswith("views/") or
-                        element['path'].startswith("components/")):
+                elif framework == ("Vue.js" or "Vue Vuex") and (
+                        # element['path'].endswith("app.vue") or
+                        # element['path'].startswith("views/") or
+                        element['path'].endswith(".vue") or
+                        element['path'].endswith(".ts") or
+                        element['path'].endswith("package.json")):
+                        #element['path'].startswith("components/")):
                     file_content = get_file_content(owner, repo, element['path'])
                     if 'content' in file_content:
                         decoded_content = base64.b64decode(file_content['content']).decode('utf-8')
