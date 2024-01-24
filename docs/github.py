@@ -184,11 +184,11 @@ def get_github_code_prompt(url, framework):
 
                 elif framework == ("Fiber" or "Go gin" or "Golang" or "Go Kit" or "Echo") and (
                         element['path'].endswith("main.go") or
-                        element['path'].startswith("routes/") or
                         element['path'].startswith("models/") or
+                        element['path'].endswith("model.go") or
                         element['path'].startswith("middleware/") or
-                        element['path'].startswith("config/") or
                         element['path'].startswith("handlers/") or
+                        element['path'].startswith("domain/") or
                         element['path'].startswith("controllers/")):
                     file_content = get_file_content(owner, repo, element['path'])
                     if 'content' in file_content:
@@ -198,8 +198,7 @@ def get_github_code_prompt(url, framework):
 
                 elif framework == "Svelte" and (
                         element['path'].endswith(".svelte") or
-                        element['path'].endswith(".js") or
-                        element['path'].endswith(".ts") or
+                        element['path'].startswith("components/") or
                         element['path'].endswith("package.json") or
                         element['path'].endswith("rollup.config.js") or
                         element['path'].endswith("webpack.config.js") or
@@ -219,28 +218,8 @@ def get_github_code_prompt(url, framework):
                         data_prmp.append(current_element)
 
                 elif framework == "Angular" and (
-                        element['path'].startswith("src/app/") or
-                        element['path'].endswith(".ts") or
-                        element['path'].endswith("main.ts") or
-                        element['path'].endswith("index.html") or
-                        element['path'].endswith("styles.css") or
-                        element['path'].endswith("app.module.ts") or
-                        element['path'].endswith("angular.json") or
-                        element['path'].endswith("package.json")):
-                    file_content = get_file_content(owner, repo, element['path'])
-                    if 'content' in file_content:
-                        decoded_content = base64.b64decode(file_content['content']).decode('utf-8')
-                        current_element['content'] = decoded_content
-                        data_prmp.append(current_element)
-
-                elif framework == "Ruby on Rails" and (
-                        element['path'].startswith("app/") or
-                        element['path'].endswith("routes.rb") or
-                        element['path'].startswith("db/") or
-                        element['path'].endswith("Gemfile") or
-                        element['path'].endswith("database.yml") or
-                        element['path'].endswith("environment.rb") or
-                        element['path'].endswith("secrets.yml")):
+                        element['path'].startswith("api/") or
+                        element['path'].endswith("index.html")):
                     file_content = get_file_content(owner, repo, element['path'])
                     if 'content' in file_content:
                         decoded_content = base64.b64decode(file_content['content']).decode('utf-8')
@@ -254,6 +233,26 @@ def get_github_code_prompt(url, framework):
                         element['path'].startswith("public/") or
                         element['path'].startswith("resources/views/") or
                         element['path'].startswith("routes/")):
+                    file_content = get_file_content(owner, repo, element['path'])
+                    if 'content' in file_content:
+                        decoded_content = base64.b64decode(file_content['content']).decode('utf-8')
+                        current_element['content'] = decoded_content
+                        data_prmp.append(current_element)
+
+                elif framework == "Flask" and (
+                        element['path'].startswith("app/") or
+                        element['path'].startswith("model/") or
+                        element['path'].endswith("models.py")):
+                    file_content = get_file_content(owner, repo, element['path'])
+                    if 'content' in file_content:
+                        decoded_content = base64.b64decode(file_content['content']).decode('utf-8')
+                        current_element['content'] = decoded_content
+                        data_prmp.append(current_element)
+
+                elif framework == "Vue.js" and (
+                        element['path'].endswith("app.vue") or
+                        element['path'].startswith("views/") or
+                        element['path'].startswith("components/")):
                     file_content = get_file_content(owner, repo, element['path'])
                     if 'content' in file_content:
                         decoded_content = base64.b64decode(file_content['content']).decode('utf-8')
