@@ -162,7 +162,7 @@ def get_github_code_prompt(url, framework):
                         current_element['content'] = decoded_content
                         data_prmp.append(current_element)
 
-                elif framework == "React" and element['path'].startswith("src/") or (
+                elif framework == "React" and element['path'].startswith("src/") and (
                         element['path'].endswith(".ts") or
                         element['path'].endswith(".tsx") or
                         element['path'].endswith(".js") or
