@@ -80,15 +80,14 @@ class DocsAPI(APIView):
         if url_validator(repository_url) is False:
             return Response({"message": "유효하지 않은 URL입니다.", "status": 404}, status=status.HTTP_400_BAD_REQUEST)
 
-
-########################################################################################################################
-##################################################### Future ###########################################################
-########################################################################################################################
+        ########################################################################################################################
+        ##################################################### Future ###########################################################
+        ########################################################################################################################
         # 이미 생성한적이 있는 문서 (지운적 있더라도)
         if Docs.objects.filter(user_id=user_id, repository_url=repository_url).exists():
             # 가장 최신 데이터를 가져옴
-            old_docs = Docs.objects.filter(user_id=user_id, repository_url=repository_url).order_by('-created_at').first()
-
+            old_docs = Docs.objects.filter(user_id=user_id, repository_url=repository_url).order_by(
+                '-created_at').first()
 
             # TODO: 최신 Repo의 Default Branch node hash가져오기
             # TODO: hash가 같을 경우 (코드 변경점 없음)
@@ -138,17 +137,17 @@ class DocsAPI(APIView):
                             "created_at": new_docs.created_at,
                         }
 
-                        return Response({"message": "문서 생성 성공", "status": 201, "data": res_data}, status=status.HTTP_201_CREATED)
+                        return Response({"message": "문서 생성 성공", "status": 201, "data": res_data},
+                                        status=status.HTTP_201_CREATED)
                     else:
-                        return Response({"message": "문서 생성 실패", "status": 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                        return Response({"message": "문서 생성 실패", "status": 500},
+                                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             # hash가 다를 경우 (코드 변경점 있음)
             # - 원래 로직대로 진행
 
-
-########################################################################################################################
-##################################################### Future ###########################################################
-########################################################################################################################
-
+        ########################################################################################################################
+        ##################################################### Future ###########################################################
+        ########################################################################################################################
 
         framework = framework_finder_task.delay(repository_url)
         if framework == "failed":
@@ -190,7 +189,6 @@ class DocsAPI(APIView):
             if res_data.result == "failed":
                 return Response({'message': 'GPT API Server Error.', 'status': 500},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
             response = res_data.result['response']
             stack = res_data.result['stack']
@@ -239,8 +237,6 @@ class DocsAPI(APIView):
         # TODO: 추출한 코드를 활용하여 문서 생성
 
 
-
-@swagger_auto_schema(request_body=no_body)
 class DocsVersionList(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -263,11 +259,13 @@ class DocsVersionList(APIView):
         docs_data = defaultdict(list)
         for doc in docs:
             group_title = '/'.join(doc.repository_url.split('/')[-2:])  # 'teamName/repository' 형식으로 그룹 제목 설정
+            keywords = Keywords.objects.filter(docs_id=doc.id)  # 해당 문서에 연결된 키워드 가져오기
             docs_data[group_title].append({
                 "id": doc.id,
                 "title": doc.title,
                 "color": doc.color,
                 "created_at": doc.created_at.strftime('%y-%m-%d'),  # 날짜를 'yy-mm-dd' 형식으로 변환
+                "keywords": [{"name": keyword.name} for keyword in keywords],
             })
 
         # 각 url 별 문서를 최신 생성 순서로 정렬
@@ -293,6 +291,7 @@ class DocsDetail(APIView):  # Docs의 detail을 보여주는 역할
             user_id = user_token_to_data(token)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
         docs_id = self.kwargs.get("pk")
         if docs_id is None:  # URL에서 pk를 제대로 가져오지 못한 경우
             return Response({
@@ -415,7 +414,8 @@ class DocsShareView(APIView):
 class DocsContributorView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @swagger_auto_schema(tags=["Docs"], operation_summary="문서 컨트리뷰터 생성 API", request_body=SwaggerDocsContributorPostSerializer)
+    @swagger_auto_schema(tags=["Docs"], operation_summary="문서 컨트리뷰터 생성 API",
+                         request_body=SwaggerDocsContributorPostSerializer)
     def post(self, request, *args, **kwargs):
         repo_url = request.data.get('repository_url')
 
@@ -465,7 +465,10 @@ class DocsSearchView(APIView):
         if query is None:
             return Response({"message": "검색어를 입력해 주세요.", "status": 400}, status=status.HTTP_400_BAD_REQUEST)
 
-        documents = Docs.objects.filter(is_deleted=False, title__icontains=query, user_id=user_id) | Docs.objects.filter(is_deleted=False, keywords__name__icontains=query, user_id=user_id)
+        documents = Docs.objects.filter(is_deleted=False, title__icontains=query,
+                                        user_id=user_id) | Docs.objects.filter(is_deleted=False,
+                                                                               keywords__name__icontains=query,
+                                                                               user_id=user_id)
         if not documents.exists():
             return Response({"message": "해당하는 문서가 없습니다.", "status": 404}, status=status.HTTP_404_NOT_FOUND)
 
@@ -475,5 +478,3 @@ class DocsSearchView(APIView):
             "status": 200,
             "data": serializer.data
         }, status=status.HTTP_200_OK)
-
-
