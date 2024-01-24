@@ -226,13 +226,9 @@ def get_github_code_prompt(url, framework):
                         current_element['content'] = decoded_content
                         data_prmp.append(current_element)
 
-                elif framework == "Laravel" and (
-                        element['path'].startswith("app/") or
-                        element['path'].startswith("config/") or
-                        element['path'].startswith("database/") or
-                        element['path'].startswith("public/") or
-                        element['path'].startswith("resources/views/") or
-                        element['path'].startswith("routes/")):
+                elif framework == ("Nodejs" or "Next.js") and (
+                        element['path'].endswith(".js") or
+                        element['path'].endswith("package.json")):
                     file_content = get_file_content(owner, repo, element['path'])
                     if 'content' in file_content:
                         decoded_content = base64.b64decode(file_content['content']).decode('utf-8')
