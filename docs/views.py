@@ -211,9 +211,9 @@ class DocsAPI(APIView):
         else:
             return Response({"message": "문서 생성 실패", "status": 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        # TODO: tech_stack에 기술 저장
+        # 기술스택 비활성화
         # stack_ary = []
-        #
+
         # if stack in ',':
         #     stack_ary = stack.split(', ')
         # else:

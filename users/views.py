@@ -16,10 +16,7 @@ from django.shortcuts import get_object_or_404
 # swagger 관련
 from rest_framework.views import APIView
 from drf_yasg.utils import swagger_auto_schema
-
-
-# from drf_yasg import openapi
-
+from docs.models import Docs
 
 class RegisterAPIView(APIView):
     # 회원가입
@@ -54,6 +51,32 @@ class RegisterAPIView(APIView):
                 },
                 status=status.HTTP_200_OK,
             )
+
+            welcome_docs_1 = Docs(user_id=user,
+                                    title="Welcome to GTD!",
+                                    content="GTD를 사용해주셔서 감사합니다.",
+                                    repository_url="", url="", language="KOR",
+                                    color="#99CCFF", thread_id="", commit_sha="")
+            welcome_docs_2 = Docs(user_id=user,
+                                    title="Let's Get Started!",
+                                    content="서비스를 시작하는 방법에 대한 안내입니다.",
+                                    repository_url="", url="", language="KOR",
+                                    color="#99CCFF", thread_id="", commit_sha="")
+            welcome_docs_3 = Docs(user_id=user,
+                                    title="Feature Fiesta!",
+                                    content="서비스의 주요 기능에 대해 설명합니다.",
+                                    repository_url="", url="", language="KOR",
+                                    color="#99CCFF", thread_id="", commit_sha="")
+            welcome_docs_4 = Docs(user_id=user,
+                                    title="Help is Here!",
+                                    content="Stuck somewhere? We're here to help. Check out this guide!",
+                                    repository_url="", url="", language="KOR",
+                                    color="#99CCFF", thread_id="", commit_sha="")
+
+            welcome_docs_1.save()
+            welcome_docs_2.save()
+            welcome_docs_3.save()
+            welcome_docs_4.save()
 
             res.set_cookie("access", access_token, httponly=True)
             res.set_cookie("refresh", refresh_token, httponly=True)
