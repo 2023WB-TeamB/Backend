@@ -67,15 +67,13 @@ def max_elements_subset_indices(arr):
 
     return dp[max_sum][1]
 
-def framework_finder(url):
+def framework_finder(url, root_file):
     if url.startswith("https://"):
         url = url.replace("https://", "")
 
     repo_url_list = url.split("/")
     owner = repo_url_list[1]
     repo = repo_url_list[2].split(".")[0]
-    path = ''
-    root_file = get_file_content(owner, repo, path)
 
     structure = display_only_directory_structure(root_file, owner=owner, repo=repo)
 
@@ -199,8 +197,9 @@ def get_github_code_prompt(url, framework):
     ###########################################################################################################################
     ###########################################################################################################################
 
+    # 찾아온 파일이 있을 경우에만 data 뽑아오기 (삭제 X)
     if root_file:
-        formatted_structure1 = display_directory_structure(root_file)
+        display_directory_structure(root_file)
 
     res_ary = []
     for data in data_prmp:
@@ -262,6 +261,7 @@ def get_assistant_response(prompt_ary, language):
             role="user",
             content=prompt_ary[0]
         )
+        # print("메시지 전송")
 
     ###############################################################################################
     ###############################################################################################

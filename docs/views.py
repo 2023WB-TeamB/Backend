@@ -149,8 +149,20 @@ class DocsAPI(APIView):
 ##################################################### Future ###########################################################
 ########################################################################################################################
 
+        # TODO ##############################################get_file_content#################################################### Solved
+        if repository_url.startswith("https://"):
+            repository_url = repository_url.replace("https://", "")
 
-        framework = framework_finder_task.delay(repository_url)
+        repo_url_list = repository_url.split("/")
+        owner = repo_url_list[1]
+        repo = repo_url_list[2].split(".")[0]
+        path = ''
+        root_file = get_file_content(owner, repo, path)
+        ######################################################################################################
+
+        # TODO ##############################################get_file_content#################################################### Solved
+        framework = framework_finder_task.delay(repository_url, root_file)
+        ######################################################################################################
         if framework == "failed":
             return Response({'message': 'GPT API Server Error.', 'status': 500},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -166,18 +178,12 @@ class DocsAPI(APIView):
             return Response({"message": "framework 추출 실패", "status": 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         ####################################################
-        if repository_url.startswith("https://"):
-            repository_url = repository_url.replace("https://", "")
-
-        repo_url_list = repository_url.split("/")
-        owner = repo_url_list[1]
-        repo = repo_url_list[2].split(".")[0]
-        path = ''
-        root_file = get_file_content(owner, repo, path)
 
         # TODO: 찾아낸 Framework를 활용하여 GitHub 코드 추출
         if root_file:
+        # TODO ##############################################get_file_content####################################################
             prompt_ary = get_github_code_prompt(repository_url, framework)
+        ######################################################################################################
 
             res_data = get_assistant_response_task.delay(prompt_ary, language)
 
