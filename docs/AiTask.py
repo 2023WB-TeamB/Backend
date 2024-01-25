@@ -13,8 +13,8 @@ def delayed_task():
 
 
 @app.task(name='framework_finder_task')
-def framework_finder_task(repository_url):
-    framework = framework_finder(repository_url)
+def framework_finder_task(repository_url, root_file):
+    framework = framework_finder(repository_url, root_file)
     return framework
 
 

@@ -5,6 +5,7 @@ from openai import OpenAI
 
 import time
 import logging
+from collections import deque
 
 env = environ.Env(DEBUG=(bool, True))
 GITHUB_TOKEN = env('GITHUB_TOKEN')
@@ -66,6 +67,7 @@ def max_elements_subset_indices(arr):
                 dp[j][1] = dp[j-arr[i]][1] + [i]
 
     return dp[max_sum][1]
+
 
 def framework_finder(url, root_file):
     if url.startswith("https://"):
@@ -132,10 +134,13 @@ def get_github_code_prompt(url, framework):
     ###########################################################################################################################
     ###########################################################################################################################
 
-    def display_directory_structure(file_structure):
-
+    def display_directory_structure_bfs(file_structure):
+        queue = deque(file_structure)
         result_structure = []
-        for element in file_structure:
+
+        while queue:
+            element = queue.popleft()
+
             # 무시할 파일이면 건너뛰기
             if element['name'] in ignore_file:
                 continue
@@ -155,8 +160,10 @@ def get_github_code_prompt(url, framework):
             if element['type'] == "dir":
                 nested_structure = get_file_content(owner, repo, element['path'])
                 if nested_structure:
-                    # 재귀적으로 디렉토리 구조를 child에 저장
-                    current_element['child'] = display_directory_structure(nested_structure)
+                    # 큐에 디렉토리 내부 구조를 추가
+                    queue.extend(nested_structure)
+                    # 디렉토리 구조를 child에 저장
+                    current_element['child'] = nested_structure
 
             elif element['type'] == "file":
                 if framework == "Django" and (element['path'].endswith("views.py") or
@@ -191,6 +198,7 @@ def get_github_code_prompt(url, framework):
                         data_prmp.append(current_element)
 
             result_structure.append(current_element)
+
         return result_structure
 
     ###########################################################################################################################
@@ -199,17 +207,23 @@ def get_github_code_prompt(url, framework):
 
     # 찾아온 파일이 있을 경우에만 data 뽑아오기 (삭제 X)
     if root_file:
-        display_directory_structure(root_file)
+        display_directory_structure_bfs(root_file)
 
     res_ary = []
     for data in data_prmp:
-        msg = f"path: {data['path']}\ncontent: {data['content']}"
-        # commit_assistant_client.beta.threads.messages.create(
-        #     thread_id,
-        #     role="user",
-        #     content=msg
-        # )
-        res_ary.append(msg)
+        content = data['content']
+
+        # content가 32767자를 넘는 경우 slice하여 처리
+        if len(content) > 32700:
+            msg1 = f"path: {data['path']}\ncontent(1): {data['content'][:32700]}"
+            msg2 = f"path: {data['path']}\ncontent(2): {data['content'][32700:]}"
+            res_ary.append(msg1)
+            # print("메세지 슬라이싱 처리완")
+            res_ary.append(msg2)
+        else:
+            msg = f"path: {data['path']}\ncontent: {data['content']}"
+            res_ary.append(msg)
+
     return res_ary
 
 

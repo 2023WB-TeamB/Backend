@@ -244,7 +244,6 @@ class DocsAPI(APIView):
         # TODO: 추출한 코드를 활용하여 문서 생성
 
 
-
 @swagger_auto_schema(request_body=no_body)
 class DocsVersionList(APIView):
     permission_classes = [IsAuthenticated]
