@@ -197,6 +197,82 @@ def get_github_code_prompt(url, framework):
                         current_element['content'] = decoded_content
                         data_prmp.append(current_element)
 
+                elif framework == ("Fiber" or "Go gin" or "Golang" or "Go Kit" or "Echo") and (
+                        element['path'].endswith("main.go") or
+                        element['path'].startswith("models/") or
+                        element['path'].endswith("model.go") or
+                        element['path'].startswith("middleware/") or
+                        element['path'].startswith("handlers/") or
+                        element['path'].startswith("domain/") or
+                        element['path'].startswith("controllers/")):
+                    file_content = get_file_content(owner, repo, element['path'])
+                    if 'content' in file_content:
+                        decoded_content = base64.b64decode(file_content['content']).decode('utf-8')
+                        current_element['content'] = decoded_content
+                        data_prmp.append(current_element)
+
+                elif framework == "Svelte" and (
+                        element['path'].endswith(".svelte") or
+                        element['path'].startswith("components/") or
+                        element['path'].endswith("package.json") or
+                        element['path'].endswith("rollup.config.js") or
+                        element['path'].endswith("webpack.config.js") or
+                        element['path'].endswith("App.svelte")):
+                    file_content = get_file_content(owner, repo, element['path'])
+                    if 'content' in file_content:
+                        decoded_content = base64.b64decode(file_content['content']).decode('utf-8')
+                        current_element['content'] = decoded_content
+                        data_prmp.append(current_element)
+
+                elif framework == "Ktor" and (element['path'].startswith("src/main/kotlin") or
+                                              element['path'].endswith("build.gradle.kts")):
+                    file_content = get_file_content(owner, repo, element['path'])
+                    if 'content' in file_content:
+                        decoded_content = base64.b64decode(file_content['content']).decode('utf-8')
+                        current_element['content'] = decoded_content
+                        data_prmp.append(current_element)
+
+                elif framework == "Angular" and (
+                        element['path'].startswith("api/") or
+                        element['path'].endswith("index.html")):
+                    file_content = get_file_content(owner, repo, element['path'])
+                    if 'content' in file_content:
+                        decoded_content = base64.b64decode(file_content['content']).decode('utf-8')
+                        current_element['content'] = decoded_content
+                        data_prmp.append(current_element)
+
+                elif framework == ("Nodejs" or "Next.js") and (
+                        element['path'].endswith(".js") or
+                        element['path'].endswith("package.json")):
+                    file_content = get_file_content(owner, repo, element['path'])
+                    if 'content' in file_content:
+                        decoded_content = base64.b64decode(file_content['content']).decode('utf-8')
+                        current_element['content'] = decoded_content
+                        data_prmp.append(current_element)
+
+                elif framework == "Flask" and (
+                        element['path'].startswith("app/") or
+                        element['path'].startswith("model/") or
+                        element['path'].endswith("models.py")):
+                    file_content = get_file_content(owner, repo, element['path'])
+                    if 'content' in file_content:
+                        decoded_content = base64.b64decode(file_content['content']).decode('utf-8')
+                        current_element['content'] = decoded_content
+                        data_prmp.append(current_element)
+
+                elif framework == ("Vue.js" or "Vue Vuex") and (
+                        # element['path'].endswith("app.vue") or
+                        # element['path'].startswith("views/") or
+                        element['path'].endswith(".vue") or
+                        element['path'].endswith(".ts") or
+                        element['path'].endswith("package.json")):
+                        #element['path'].startswith("components/")):
+                    file_content = get_file_content(owner, repo, element['path'])
+                    if 'content' in file_content:
+                        decoded_content = base64.b64decode(file_content['content']).decode('utf-8')
+                        current_element['content'] = decoded_content
+                        data_prmp.append(current_element)
+
             result_structure.append(current_element)
 
         return result_structure
