@@ -61,17 +61,17 @@ class RegisterAPIView(APIView):
                                     title="Let's Get Started!",
                                     content="서비스를 시작하는 방법에 대한 안내입니다.",
                                     repository_url="", url="", language="KOR",
-                                    color="#99CCFF", thread_id="", commit_sha="")
+                                    color="#E87F7F", thread_id="", commit_sha="")
             welcome_docs_3 = Docs(user_id=user,
                                     title="Feature Fiesta!",
                                     content="서비스의 주요 기능에 대해 설명합니다.",
                                     repository_url="", url="", language="KOR",
-                                    color="#99CCFF", thread_id="", commit_sha="")
+                                    color="#B3A7FE", thread_id="", commit_sha="")
             welcome_docs_4 = Docs(user_id=user,
                                     title="Help is Here!",
                                     content="Stuck somewhere? We're here to help. Check out this guide!",
                                     repository_url="", url="", language="KOR",
-                                    color="#99CCFF", thread_id="", commit_sha="")
+                                    color="#F59D5D", thread_id="", commit_sha="")
 
             welcome_docs_1.save()
             welcome_docs_2.save()
