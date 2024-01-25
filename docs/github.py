@@ -56,6 +56,16 @@ def display_only_directory_structure(file_structure, owner, repo, indent=""):
                                                            indent=indent + "\t")
     return result
 
+def max_elements_subset_indices(arr):
+    max_sum = 32750
+    dp = [[0, []] for _ in range(max_sum+1)]
+    for i in range(len(arr)):
+        for j in range(max_sum, arr[i]-1, -1):
+            if j-arr[i] >= 0 and dp[j][0] < dp[j-arr[i]][0] + 1:
+                dp[j][0] = dp[j-arr[i]][0] + 1
+                dp[j][1] = dp[j-arr[i]][1] + [i]
+
+    return dp[max_sum][1]
 
 def framework_finder(url):
     if url.startswith("https://"):
@@ -289,12 +299,49 @@ def get_assistant_response(prompt_ary, language):
     if language == "KOR":
         assistant_id = KOR_CODE_ASSISTANT_ID
 
-    for prompt in prompt_ary:
+
+    ###############################################################################################
+    ###############################################################################################
+    ###############################################################################################
+
+    while True:
+        arr = [len(p) for p in prompt_ary]
+        arr_len = len(arr)
+
+        if arr_len <= 1:
+            break
+
+        combine_index = max_elements_subset_indices(arr)
+        # print(combine_index)
+
+        # prompt가 비어있는 경우 프로그램 종료
+        if not prompt_ary:
+            break
+
+        combine_message = "\n\n".join(prompt_ary[i] for i in combine_index)
+
+        combine_index_set = set(combine_index)
+        prompt_ary = [prompt_ary[i] for i in range(arr_len) if i not in combine_index_set]
+        # print(f"메세지 전송 | {len(combine_message)}길이의 메세지 병합")
         code_assistant_client.beta.threads.messages.create(
             thread_id,
             role="user",
-            content=prompt
+            content=combine_message
         )
+        # print("메시지 전송")
+
+    if len(arr) == 1:
+        # print(arr)
+        # print(len(prompt_ary))
+        code_assistant_client.beta.threads.messages.create(
+            thread_id,
+            role="user",
+            content=prompt_ary[0]
+        )
+
+    ###############################################################################################
+    ###############################################################################################
+    ###############################################################################################
 
     run = code_assistant_client.beta.threads.runs.create(
         thread_id=thread_id,
@@ -306,13 +353,11 @@ def get_assistant_response(prompt_ary, language):
             thread_id=thread_id,
             run_id=run.id
         )
-        time.sleep(5)
+        time.sleep(2)
         # logging.info(f"Run status: {run}")
 
     if run.status == "failed":
         return "failed", "failed", "failed"
-
-
 
     messages = code_assistant_client.beta.threads.messages.list(
         thread_id=thread_id
@@ -329,41 +374,42 @@ def get_assistant_response(prompt_ary, language):
     #################################################################################
     #################################################################################
     #################################################################################
-    run = code_assistant_client.beta.threads.runs.create(
-        thread_id=thread_id,
-        assistant_id=assistant_id,
-        instructions="""- Style : 정확하게
-- Reader level : 전문가
-- Perspective : 개발자
-- Just tell me the conclusion
----
-tech stack만 알려줘,
-답변 형식은 각 기술들 사이에 /를 넣어서 알려줘 stack/stack/stack/stack/...
-과 같은 형식처럼"""
-    )
+#     run = code_assistant_client.beta.threads.runs.create(
+#         thread_id=thread_id,
+#         assistant_id=assistant_id,
+#         instructions="""- Style : 정확하게
+# - Reader level : 전문가
+# - Perspective : 개발자
+# - Just tell me the conclusion
+# ---
+# tech stack만 알려줘,
+# 답변 형식은 각 기술들 사이에 /를 넣어서 알려줘 stack/stack/stack/stack/...
+# 과 같은 형식처럼"""
+#     )
+#
+#     while run.status == "queued" or run.status == "in_progress":
+#         run = code_assistant_client.beta.threads.runs.retrieve(
+#             thread_id=thread_id,
+#             run_id=run.id
+#         )
+#         time.sleep(5)
+#         # logging.info(f"Run status: {run}")
+#
+#     if run.status == "failed":
+#         return "failed", "failed", "failed"
+#
+#     messages = code_assistant_client.beta.threads.messages.list(
+#         thread_id=thread_id
+#     )
+#     res_message = ""
+#
+#     for message in messages:
+#         if message.role == 'assistant':
+#             res_message = message.content
+#             break
 
-    while run.status == "queued" or run.status == "in_progress":
-        run = code_assistant_client.beta.threads.runs.retrieve(
-            thread_id=thread_id,
-            run_id=run.id
-        )
-        time.sleep(5)
-        # logging.info(f"Run status: {run}")
-
-    if run.status == "failed":
-        return "failed", "failed", "failed"
-
-    messages = code_assistant_client.beta.threads.messages.list(
-        thread_id=thread_id
-    )
-    res_message = ""
-
-    for message in messages:
-        if message.role == 'assistant':
-            res_message = message.content
-            break
-
-    res_tech_stack = res_message[0].text.value
+    # 더이상 테크스텍을 사용하지 않아 비활성화 처리함
+    res_tech_stack = []
     #################################################################
     #################################################################
     #################################################################

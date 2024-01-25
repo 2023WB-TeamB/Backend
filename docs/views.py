@@ -212,12 +212,12 @@ class DocsAPI(APIView):
             return Response({"message": "문서 생성 실패", "status": 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # TODO: tech_stack에 기술 저장
-        stack_ary = []
-
-        if stack in ',':
-            stack_ary = stack.split(', ')
-        else:
-            stack_ary = stack.split('/')
+        # stack_ary = []
+        #
+        # if stack in ',':
+        #     stack_ary = stack.split(', ')
+        # else:
+        #     stack_ary = stack.split('/')
 
         contributors = get_contributors(owner, repo)
         badge_tags = ""
@@ -229,7 +229,7 @@ class DocsAPI(APIView):
             "title": docs.title,
             "content": docs.content + badge_tags,
             "language": docs.language,
-            "tech_stack": stack_ary,
+            "tech_stack": [],
             "color": docs.color,
             "created_at": docs.created_at,
         }
