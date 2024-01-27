@@ -104,7 +104,7 @@ class DocsAPI(APIView):
                 elif response != "not found thread":
                     # serializer를 통해 데이터로 변환 후 db에 저장 후 꺼내오기
                     request.data['user_id'] = user_id
-                    request.data['title'] = old_docs.title
+                    request.data['title'] = get_title(response, language)
                     request.data['content'] = response
                     request.data['language'] = language
                     request.data['color'] = color
