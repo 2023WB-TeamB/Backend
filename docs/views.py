@@ -125,7 +125,7 @@ class DocsAPI(APIView):
                         contributors = get_contributors(owner, repo)
                         badge_tags = "\n"
                         for contributor in contributors:
-                            badge_tags += f'<img src="https://gtd.kro.kr/api/badge/{owner}/{repo}/{contributor}?theme=terminal1"  />\n'
+                            badge_tags += f'<img src="https://gitodoc.kro.kr/api/badge/{owner}/{repo}/{contributor}?theme=terminal1"  />\n'
 
                         res_data = {
                             "docs_id": new_docs.id,
@@ -225,7 +225,7 @@ class DocsAPI(APIView):
         contributors = get_contributors(owner, repo)
         badge_tags = ""
         for contributor in contributors:
-            badge_tags += f'<img src="https://gtd.kro.kr/api/badge/{owner}/{repo}/{contributor}?theme=terminal1"  />\n'
+            badge_tags += f'<img src="https://gitodoc.kro.kr/api/badge/{owner}/{repo}/{contributor}?theme=terminal1"  />\n'
 
         res_data = {
             "docs_id": docs.id,
