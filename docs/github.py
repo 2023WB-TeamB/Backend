@@ -301,6 +301,53 @@ def get_github_code_prompt(url, framework):
     return res_ary
 
 
+def get_title(content, language):
+    code_assistant_client = OpenAI(api_key=GPT_SECRET_KEY)
+    title_thread = code_assistant_client.beta.threads.create()
+    title_thread_id = title_thread.id
+
+    title_assistant_id = ENG_TITLE_ASSISTANT_ID
+    if language == "KOR":
+        title_assistant_id = KOR_TITLE_ASSISTANT_ID
+
+    content_slice_list = slice_blog(content)
+
+    for content_slice in content_slice_list:
+        code_assistant_client.beta.threads.messages.create(
+            title_thread_id,
+            role="user",
+            content=content_slice
+        )
+
+    run = code_assistant_client.beta.threads.runs.create(
+        thread_id=title_thread_id,
+        assistant_id=title_assistant_id
+    )
+
+    while run.status == "queued" or run.status == "in_progress":
+        run = code_assistant_client.beta.threads.runs.retrieve(
+            thread_id=title_thread_id,
+            run_id=run.id
+        )
+        time.sleep(2)
+        # logging.info(f"Run status: {run}")
+
+    if run.status == "failed":
+        return "failed", "failed", "failed"
+
+    messages = code_assistant_client.beta.threads.messages.list(
+        thread_id=title_thread_id
+    )
+    res_message = ""
+
+    for message in messages:
+        if message.role == 'assistant':
+            res_message = message.content
+            break
+
+    res_title = res_message[0].text.value
+    return res_title
+
 def slice_blog(res_blog):
     slice_limit = 32000
     blog_parts = []
@@ -320,14 +367,10 @@ def get_assistant_response(prompt_ary, language):
     code_assistant_client = OpenAI(api_key=GPT_SECRET_KEY)
     code_thread = code_assistant_client.beta.threads.create()
     content_thread_id = code_thread.id
-    title_thread = code_assistant_client.beta.threads.create()
-    title_thread_id = title_thread.id
 
     assistant_id = ENG_CODE_ASSISTANT_ID
-    title_assistant_id = ENG_TITLE_ASSISTANT_ID
     if language == "KOR":
         assistant_id = KOR_CODE_ASSISTANT_ID
-        title_assistant_id = KOR_TITLE_ASSISTANT_ID
 
 
     ###############################################################################################
@@ -407,42 +450,8 @@ def get_assistant_response(prompt_ary, language):
     res_tech_stack = []
     # TODO: ################################ title feature ###########################################
     # TODO: 제목 뽑기
-    content_slice_list = slice_blog(res_blog)
+    res_title = get_title(res_blog, language)
 
-    for content_slice in content_slice_list:
-        code_assistant_client.beta.threads.messages.create(
-            title_thread_id,
-            role="user",
-            content=content_slice
-        )
-
-    run = code_assistant_client.beta.threads.runs.create(
-        thread_id=title_thread_id,
-        assistant_id=title_assistant_id
-    )
-
-    while run.status == "queued" or run.status == "in_progress":
-        run = code_assistant_client.beta.threads.runs.retrieve(
-            thread_id=title_thread_id,
-            run_id=run.id
-        )
-        time.sleep(2)
-        # logging.info(f"Run status: {run}")
-
-    if run.status == "failed":
-        return "failed", "failed", "failed"
-
-    messages = code_assistant_client.beta.threads.messages.list(
-        thread_id=title_thread_id
-    )
-    res_message = ""
-
-    for message in messages:
-        if message.role == 'assistant':
-            res_message = message.content
-            break
-
-    res_title = res_message[0].text.value
     return res_blog, res_tech_stack, res_title, content_thread_id
 
 
