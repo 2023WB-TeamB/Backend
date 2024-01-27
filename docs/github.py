@@ -23,7 +23,7 @@ ignore_file = [
     "wsgi.py", "tests.py", "admin.py", "apps.py", "gradle", "gradlew", "gradlew.bat", "settings.gradle"
 ]
 
-image_file = [".svg", ".png", ".jpg", ".gif", ".sql", ".ini", ".in", ".md", "cfg"]
+image_file = [".svg", ".png", ".jpg", ".gif", ".sql", ".ini", ".in", ".md", "cfg", "d.ts", "d.js", "d.jsx", "d.tsx", ]
 
 
 def url_validator(url):
@@ -174,7 +174,7 @@ def get_github_code_prompt(url, framework):
                         current_element['content'] = decoded_content
                         data_prmp.append(current_element)
 
-                elif framework == "React" and element['path'].startswith("src/") and (
+                elif (framework == "React" or framework == "React Native") and element['path'].startswith("src/pages/") and (
                         element['path'].endswith(".ts") or
                         element['path'].endswith(".tsx") or
                         element['path'].endswith(".js") or
