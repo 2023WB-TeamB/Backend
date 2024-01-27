@@ -15,6 +15,8 @@ GPT_SECRET_KEY = env('GPT_SECRET_KEY')
 FRAMEWORK_ASSISTANT_ID = env('FRAMEWORK_ASSISTANT_ID')
 ENG_CODE_ASSISTANT_ID = env('ENG_CODE_ASSISTANT_ID')
 KOR_CODE_ASSISTANT_ID = env('KOR_CODE_ASSISTANT_ID')
+ENG_TITLE_ASSISTANT_ID = env('ENG_TITLE_ASSISTANT_ID')
+KOR_TITLE_ASSISTANT_ID = env('KOR_TITLE_ASSISTANT_ID')
 
 ignore_file = [
     ".gitignore", ".idea", ".vscode", "__init__.py", "migrations", "manage.py", "asgi.py",
@@ -299,14 +301,33 @@ def get_github_code_prompt(url, framework):
     return res_ary
 
 
+def slice_blog(res_blog):
+    slice_limit = 32000
+    blog_parts = []
+
+    # res_blog의 길이가 32000자 이하일 경우, 그대로 blog_parts에 추가
+    if len(res_blog) <= slice_limit:
+        blog_parts.append(res_blog)
+    else:
+        # res_blog의 길이가 32000자 이상일 경우, 32000자 단위로 분할하여 blog_parts에 추가
+        for i in range(0, len(res_blog), slice_limit):
+            blog_parts.append(res_blog[i:i+slice_limit])
+
+    return blog_parts
+
+
 def get_assistant_response(prompt_ary, language):
     code_assistant_client = OpenAI(api_key=GPT_SECRET_KEY)
     code_thread = code_assistant_client.beta.threads.create()
-    thread_id = code_thread.id
+    content_thread_id = code_thread.id
+    title_thread = code_assistant_client.beta.threads.create()
+    title_thread_id = title_thread.id
 
     assistant_id = ENG_CODE_ASSISTANT_ID
+    title_assistant_id = ENG_TITLE_ASSISTANT_ID
     if language == "KOR":
         assistant_id = KOR_CODE_ASSISTANT_ID
+        title_assistant_id = KOR_TITLE_ASSISTANT_ID
 
 
     ###############################################################################################
@@ -334,7 +355,7 @@ def get_assistant_response(prompt_ary, language):
         # print(f"메세지 전송 | {len(combine_message)}길이의 메세지 병합")
         print(len(combine_message))
         code_assistant_client.beta.threads.messages.create(
-            thread_id,
+            content_thread_id,
             role="user",
             content=combine_message
         )
@@ -345,7 +366,7 @@ def get_assistant_response(prompt_ary, language):
         # print(len(prompt_ary))
         print(len(prompt_ary[0]))
         code_assistant_client.beta.threads.messages.create(
-            thread_id,
+            content_thread_id,
             role="user",
             content=prompt_ary[0]
         )
@@ -356,13 +377,13 @@ def get_assistant_response(prompt_ary, language):
     ###############################################################################################
 
     run = code_assistant_client.beta.threads.runs.create(
-        thread_id=thread_id,
+        thread_id=content_thread_id,
         assistant_id=assistant_id
     )
 
     while run.status == "queued" or run.status == "in_progress":
         run = code_assistant_client.beta.threads.runs.retrieve(
-            thread_id=thread_id,
+            thread_id=content_thread_id,
             run_id=run.id
         )
         time.sleep(2)
@@ -372,7 +393,7 @@ def get_assistant_response(prompt_ary, language):
         return "failed", "failed", "failed"
 
     messages = code_assistant_client.beta.threads.messages.list(
-        thread_id=thread_id
+        thread_id=content_thread_id
     )
 
     res_message = ""
@@ -381,86 +402,38 @@ def get_assistant_response(prompt_ary, language):
         if message.role == 'assistant':
             res_message = message.content
 
+    # 본문 추출
     res_blog = res_message[0].text.value
-
-    #################################################################################
-    #################################################################################
-    #################################################################################
-#     run = code_assistant_client.beta.threads.runs.create(
-#         thread_id=thread_id,
-#         assistant_id=assistant_id,
-#         instructions="""- Style : 정확하게
-# - Reader level : 전문가
-# - Perspective : 개발자
-# - Just tell me the conclusion
-# ---
-# tech stack만 알려줘,
-# 답변 형식은 각 기술들 사이에 /를 넣어서 알려줘 stack/stack/stack/stack/...
-# 과 같은 형식처럼"""
-#     )
-#
-#     while run.status == "queued" or run.status == "in_progress":
-#         run = code_assistant_client.beta.threads.runs.retrieve(
-#             thread_id=thread_id,
-#             run_id=run.id
-#         )
-#         time.sleep(5)
-#         # logging.info(f"Run status: {run}")
-#
-#     if run.status == "failed":
-#         return "failed", "failed", "failed"
-#
-#     messages = code_assistant_client.beta.threads.messages.list(
-#         thread_id=thread_id
-#     )
-#     res_message = ""
-#
-#     for message in messages:
-#         if message.role == 'assistant':
-#             res_message = message.content
-#             break
-
-    # 더이상 테크스텍을 사용하지 않아 비활성화 처리함
     res_tech_stack = []
-    #################################################################
-    #################################################################
-    #################################################################
+    # TODO: ################################ title feature ###########################################
+    # TODO: 제목 뽑기
+    content_slice_list = slice_blog(res_blog)
 
-    if language == "KOR":
-        instructions = """- Style : 정확하게
-- Reader level : 전문가
-- Perspective : 개발자
-- Just tell me the conclusion
-- Answer me in Korean
----
-블로그 글의 제목을 만들어줘"""
-    elif language == "ENG":
-        instructions = """- Style : 정확하게
-- Reader level : 전문가
-- Perspective : 개발자
-- Just tell me the conclusion
-- Answer me in English
----
-블로그 글의 제목을 만들어줘 그리고 앞에 제목: 이나 title: 과 같은건 빼줘"""
+    for content_slice in content_slice_list:
+        code_assistant_client.beta.threads.messages.create(
+            title_thread_id,
+            role="user",
+            content=content_slice
+        )
+
     run = code_assistant_client.beta.threads.runs.create(
-        thread_id=thread_id,
-        assistant_id=assistant_id,
-        instructions=instructions
+        thread_id=title_thread_id,
+        assistant_id=title_assistant_id
     )
 
     while run.status == "queued" or run.status == "in_progress":
         run = code_assistant_client.beta.threads.runs.retrieve(
-            thread_id=thread_id,
+            thread_id=title_thread_id,
             run_id=run.id
         )
-        time.sleep(5)
+        time.sleep(2)
         # logging.info(f"Run status: {run}")
 
     if run.status == "failed":
         return "failed", "failed", "failed"
 
     messages = code_assistant_client.beta.threads.messages.list(
-        thread_id=thread_id
+        thread_id=title_thread_id
     )
     res_message = ""
 
@@ -470,7 +443,7 @@ def get_assistant_response(prompt_ary, language):
             break
 
     res_title = res_message[0].text.value
-    return res_blog, res_tech_stack, res_title, thread_id
+    return res_blog, res_tech_stack, res_title, content_thread_id
 
 
 def get_github_latest_sha(url):
