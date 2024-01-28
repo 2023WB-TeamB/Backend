@@ -27,3 +27,7 @@ class Keywords(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class S3Img(models.Model):
+    image = models.ImageField(upload_to='dev/')

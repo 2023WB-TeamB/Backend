@@ -19,6 +19,12 @@ import requests
 import json
 import environ
 
+#s3
+from django.http import JsonResponse
+from django.views import View
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+
 # swagger 관련
 from rest_framework.views import APIView
 from drf_yasg.utils import swagger_auto_schema, no_body
@@ -481,3 +487,13 @@ class DocsSearchView(APIView):
             "status": 200,
             "data": serializer.data
         }, status=status.HTTP_200_OK)
+
+@method_decorator(csrf_exempt, name='dispatch')
+class UploadImageView(View):
+    def post(self, request, *args, **kwargs):
+        if request.method == 'POST' and request.FILES['file']:
+            file = request.FILES['file']
+            # 이미지 처리 및 S3에 업로드하는 로직 구현
+            # 업로드된 이미지의 URL 반환
+            return JsonResponse({'imageUrl': 'https://d1349rlbgsc009.cloudfront.net'})
+        return JsonResponse({'error': 'Invalid request'}, status=400)
