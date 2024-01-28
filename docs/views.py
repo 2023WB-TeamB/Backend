@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
 from users.utils import user_token_to_data
-from .models import Docs, User, Keywords
+from .models import Docs, User, Keywords, S3Img
 from .serializers import *
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
@@ -19,11 +19,17 @@ import requests
 import json
 import environ
 
-#s3
+# s3
 from django.http import JsonResponse
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from django.conf import settings
+from django.core.files.storage import default_storage
+
+import boto3
+from PIL import Image
+from io import BytesIO
 
 # swagger 관련
 from rest_framework.views import APIView
@@ -183,9 +189,9 @@ class DocsAPI(APIView):
 
         # TODO: 찾아낸 Framework를 활용하여 GitHub 코드 추출
         if root_file:
-        # TODO ##############################################get_file_content####################################################
+            # TODO ##############################################get_file_content####################################################
             prompt_ary = get_github_code_prompt(repository_url, framework)
-        ######################################################################################################
+            ######################################################################################################
 
             res_data = get_assistant_response_task.delay(prompt_ary, language)
 
@@ -245,7 +251,7 @@ class DocsAPI(APIView):
         return Response({"message": "문서 생성 성공", "status": 201, "data": res_data}, status=status.HTTP_201_CREATED)
         # TODO: 추출한 코드를 활용하여 문서 생성
 
-        
+
 class DocsVersionList(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -488,12 +494,23 @@ class DocsSearchView(APIView):
             "data": serializer.data
         }, status=status.HTTP_200_OK)
 
-@method_decorator(csrf_exempt, name='dispatch')
+
 class UploadImageView(View):
     def post(self, request, *args, **kwargs):
-        if request.method == 'POST' and request.FILES['file']:
-            file = request.FILES['file']
-            # 이미지 처리 및 S3에 업로드하는 로직 구현
-            # 업로드된 이미지의 URL 반환
-            return JsonResponse({'imageUrl': 'https://d1349rlbgsc009.cloudfront.net'})
-        return JsonResponse({'error': 'Invalid request'}, status=400)
+        file = request.FILES['file']
+
+        if file:
+            # s3 업로드
+            s3 = boto3.client('s3')
+            s3.upload_fileobj(file, 'gtd-s3bucket', f'dev/{file.name}')
+
+            # CloudFront URL
+            cloudfront_url = 'https://d1349rlbgsc009.cloudfront.net'
+            file_url = f'{cloudfront_url}/dev/{file.name}'
+
+            # # DB 저장
+            # uploaded_image = S3Img.objects.create(image=file_url)
+
+            return JsonResponse({'url': file_url})
+        else:
+            return JsonResponse({'error': 'No image file provided'}, status=400)
