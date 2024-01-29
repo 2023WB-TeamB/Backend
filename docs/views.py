@@ -13,7 +13,6 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
 from .github import *
-from .AiTask import *
 import uuid
 import requests
 import json
@@ -130,7 +129,7 @@ class DocsAPI(APIView):
                         res_data = {
                             "docs_id": new_docs.id,
                             "title": new_docs.title,
-                            "content": new_docs.content + badge_tags,
+                            "content": new_docs.content.replace('. ', '\n') + badge_tags,
                             "language": new_docs.language,
                             "tech_stack": [],
                             "color": new_docs.color,
@@ -180,23 +179,27 @@ class DocsAPI(APIView):
         # TODO ##############################################get_file_content####################################################
             prompt_ary = get_github_code_prompt(repository_url, framework)
         ######################################################################################################
+            from .github import get_assistant_response_task
+            res_data = get_assistant_response_task(prompt_ary, language)
 
-            res_data = get_assistant_response_task.delay(prompt_ary, language)
+        # while True:
+        #     if res_data.ready():
+        #         break
+        #     time.sleep(1)
 
-        while True:
-            if res_data.ready():
-                break
-            time.sleep(1)
-
-        if res_data.result:
-            if res_data.result == "failed":
+        # if res_data.result:
+        #     if res_data.result == "failed":
+        #         return Response({'message': 'GPT API Server Error.', 'status': 500},
+        #                         status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        if res_data:
+            if res_data == "failed":
                 return Response({'message': 'GPT API Server Error.', 'status': 500},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            response = res_data.result['response']
-            stack = res_data.result['stack']
-            res_title = res_data.result['res_title']
-            thread_id = res_data.result["thread_id"]
+            response = res_data['response']
+            stack = res_data['stack']
+            res_title = res_data['res_title']
+            thread_id = res_data["thread_id"]
         else:
             return Response({"message": "문서 생성 실패", "status": 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -225,7 +228,7 @@ class DocsAPI(APIView):
         contributors = get_contributors(owner, repo)
         badge_tags = ""
         for contributor in contributors:
-            badge_tags += f'<img src="https://gtd.kro.kr/api/badge/{owner}/{repo}/{contributor}?theme=terminal1"  />\n'
+            badge_tags += f'<img src="https://gitodoc.kro.kr/api/badge/{owner}/{repo}/{contributor}?theme=terminal1"  />\n'
 
         res_data = {
             "docs_id": docs.id,
