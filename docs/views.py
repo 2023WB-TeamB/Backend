@@ -26,6 +26,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.conf import settings
 import datetime
+from os.path import splitext
 from django.core.files.storage import default_storage
 
 import boto3
@@ -502,9 +503,12 @@ class UploadImageView(View):
         try:
             file = request.FILES.get('file')
 
+            # 확장자명 추출
+            ext = splitext(file.name)[1]
+
             timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")
 
-            filename = f'{timestamp}'
+            filename = f'{timestamp}{ext}'
             key = f'dev/{filename}'
             s3 = boto3.client(
                 's3',
@@ -512,8 +516,9 @@ class UploadImageView(View):
                 aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
             )
 
-            # S3에 이미지 업로드
-            s3.upload_fileobj(file, settings.AWS_STORAGE_BUCKET_NAME, key)
+            # S3에 이미지 업로드, Content-Disposition을 inline으로 설정
+            s3.upload_fileobj(file, settings.AWS_STORAGE_BUCKET_NAME, key,
+                              ExtraArgs={'ContentType': file.content_type, 'ContentDisposition': 'inline'})
 
             cloudfront_url = f'https://d1349rlbgsc009.cloudfront.net/{key}'
 
