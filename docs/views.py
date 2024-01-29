@@ -104,7 +104,7 @@ class DocsAPI(APIView):
                 elif response != "not found thread":
                     # serializer를 통해 데이터로 변환 후 db에 저장 후 꺼내오기
                     request.data['user_id'] = user_id
-                    request.data['title'] = get_title(response, language)
+                    request.data['title'] = old_docs.title
                     request.data['content'] = response
                     request.data['language'] = language
                     request.data['color'] = color
@@ -125,7 +125,7 @@ class DocsAPI(APIView):
                         contributors = get_contributors(owner, repo)
                         badge_tags = "\n"
                         for contributor in contributors:
-                            badge_tags += f'<img src="https://gitodoc.kro.kr/api/badge/{owner}/{repo}/{contributor}?theme=terminal1"  />\n'
+                            badge_tags += f'<img src="https://gtd.kro.kr/api/badge/{owner}/{repo}/{contributor}?theme=terminal1"  />\n'
 
                         res_data = {
                             "docs_id": new_docs.id,
@@ -177,9 +177,9 @@ class DocsAPI(APIView):
 
         # TODO: 찾아낸 Framework를 활용하여 GitHub 코드 추출
         if root_file:
-        # TODO ##############################################get_file_content####################################################
+            # TODO ##############################################get_file_content####################################################
             prompt_ary = get_github_code_prompt(repository_url, framework)
-        ######################################################################################################
+            ######################################################################################################
 
             res_data = get_assistant_response_task.delay(prompt_ary, language)
 
@@ -225,7 +225,7 @@ class DocsAPI(APIView):
         contributors = get_contributors(owner, repo)
         badge_tags = ""
         for contributor in contributors:
-            badge_tags += f'<img src="https://gitodoc.kro.kr/api/badge/{owner}/{repo}/{contributor}?theme=terminal1"  />\n'
+            badge_tags += f'<img src="https://gtd.kro.kr/api/badge/{owner}/{repo}/{contributor}?theme=terminal1"  />\n'
 
         res_data = {
             "docs_id": docs.id,
@@ -239,7 +239,7 @@ class DocsAPI(APIView):
         return Response({"message": "문서 생성 성공", "status": 201, "data": res_data}, status=status.HTTP_201_CREATED)
         # TODO: 추출한 코드를 활용하여 문서 생성
 
-        
+
 class DocsVersionList(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -391,11 +391,10 @@ class DocsDetail(APIView):  # Docs의 detail을 보여주는 역할
 
 
 class DocsShareView(APIView):
-    permission_classes = [IsAuthenticated]
+    generated_uuid = None
 
     @swagger_auto_schema(tags=["Docs"], operation_summary="문서 공유 API", request_body=SwaggerDocsSharePostSerializer)
     def post(self, request, *args, **kwargs):
-
         docs_id = request.data.get('docs_id')
         if docs_id is None:
             return Response({"message": "문서 ID를 입력해 주세요.", "status": 400}, status=status.HTTP_400_BAD_REQUEST)
@@ -408,10 +407,30 @@ class DocsShareView(APIView):
                             status=status.HTTP_409_CONFLICT)
         # UID를 사용하여 고유한 URL 생성
         base_url = 'https://gitodoc.kro.kr/api/v1/docs/share/'
-        unique_url = base_url + str(uuid.uuid4())
+        self.generated_uuid = str(uuid.uuid4())
+        unique_url = base_url + self.generated_uuid
         doc.url = unique_url
         doc.save()
         return Response({"message": "URL이 생성되었습니다.", "url": unique_url}, status=status.HTTP_201_CREATED)
+
+    @swagger_auto_schema(tags=["Docs"], operation_summary="공유 문서 조회 API", request_body=no_body)
+    def get(self, request, *args, **kwargs):
+        uuid_value = request.GET.get('uuid')
+        if uuid_value is None:
+            return Response({"message": "UUID를 입력해 주세요.", "status": 400}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            doc = Docs.objects.get(url__endswith=uuid_value)  # uuid 값으로 DB 대조
+        except Docs.DoesNotExist:
+            return Response({"message": "존재하지 않는 UUID입니다.", "status": 404}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = DocsSerializer(doc)
+
+        return Response({
+            "message": "공유 문서 조회 성공",
+            "status": 200,
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
 
 
 class DocsContributorView(APIView):
