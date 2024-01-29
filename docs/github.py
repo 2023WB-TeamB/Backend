@@ -7,16 +7,33 @@ import time
 import logging
 from collections import deque
 
+from .AiTask import *
+
 env = environ.Env(DEBUG=(bool, True))
 GITHUB_TOKEN = env('GITHUB_TOKEN')
 GITHUB_BEARER_HEADERS = {'Authorization': f'Bearer {GITHUB_TOKEN}'}
 GITHUB_TOKEN_HEADERS = {'Authorization': f'token {GITHUB_TOKEN}'}
 GPT_SECRET_KEY = env('GPT_SECRET_KEY')
 FRAMEWORK_ASSISTANT_ID = env('FRAMEWORK_ASSISTANT_ID')
+
 ENG_CODE_ASSISTANT_ID = env('ENG_CODE_ASSISTANT_ID')
 KOR_CODE_ASSISTANT_ID = env('KOR_CODE_ASSISTANT_ID')
+
 ENG_TITLE_ASSISTANT_ID = env('ENG_TITLE_ASSISTANT_ID')
 KOR_TITLE_ASSISTANT_ID = env('KOR_TITLE_ASSISTANT_ID')
+
+ENG_OUTLINE_ASSISTANT_ID = env('ENG_OUTLINE_ASSISTANT_ID')
+KOR_OUTLINE_ASSISTANT_ID = env('KOR_OUTLINE_ASSISTANT_ID')
+
+ENG_TECH_STACK_ASSISTANT_ID = env('ENG_TECH_STACK_ASSISTANT_ID')
+KOR_TECH_STACK_ASSISTANT_ID = env('KOR_TECH_STACK_ASSISTANT_ID')
+
+ENG_MAIN_FUNCTION_ASSISTANT_ID = env('ENG_MAIN_FUNCTION_ASSISTANT_ID')
+KOR_MAIN_FUNCTION_ASSISTANT_ID = env('KOR_MAIN_FUNCTION_ASSISTANT_ID')
+
+ENG_CORE_ALGORITHM_ASSISTANT_ID = env('ENG_CORE_ALGORITHM_ASSISTANT_ID')
+KOR_CORE_ALGORITHM_ASSISTANT_ID = env('KOR_CORE_ALGORITHM_ASSISTANT_ID')
+
 
 ignore_file = [
     ".gitignore", ".idea", ".vscode", "__init__.py", "migrations", "manage.py", "asgi.py",
@@ -330,7 +347,8 @@ def get_title(content, language):
             run_id=run.id
         )
         time.sleep(2)
-        # logging.info(f"Run status: {run}")
+        logging.info(f"Run status: {run}")
+    logging.info(f"Run status: {run}")
 
     if run.status == "failed":
         return "failed", "failed", "failed"
@@ -348,6 +366,218 @@ def get_title(content, language):
     res_title = res_message[0].text.value
     return res_title
 
+
+def get_thread_message(thread_id):
+    assistant_client = OpenAI(api_key=GPT_SECRET_KEY)
+
+    try:
+        messages = assistant_client.beta.threads.messages.list(
+            thread_id=thread_id
+        )
+
+    except Exception as e:
+        return "not found thread"
+
+    msg_list = []
+    for message in messages:
+        if message.role == 'user':
+            msg_list.append(message.content[0].text.value)
+
+    return msg_list
+
+
+def get_tech_stack(code_thread_id, language):
+    thread_code_list = get_thread_message(code_thread_id)
+
+    code_assistant_client = OpenAI(api_key=GPT_SECRET_KEY)
+    tech_thread = code_assistant_client.beta.threads.create()
+    tech_thread_id = tech_thread.id
+
+    tech_assistant_id = ENG_TECH_STACK_ASSISTANT_ID
+    if language == "KOR":
+        tech_assistant_id = KOR_TECH_STACK_ASSISTANT_ID
+
+    for message in thread_code_list:
+        code_assistant_client.beta.threads.messages.create(
+            tech_thread_id,
+            role="user",
+            content=message
+        )
+    run = code_assistant_client.beta.threads.runs.create(
+        thread_id=tech_thread_id,
+        assistant_id=tech_assistant_id
+    )
+
+    while run.status == "queued" or run.status == "in_progress":
+        run = code_assistant_client.beta.threads.runs.retrieve(
+            thread_id=tech_thread_id,
+            run_id=run.id
+        )
+        time.sleep(2)
+
+    if run.status == "failed":
+        return "failed", "failed", "failed"
+
+    messages = code_assistant_client.beta.threads.messages.list(
+        thread_id=tech_thread_id
+    )
+    res_message = ""
+
+    for message in messages:
+        if message.role == 'assistant':
+            res_message = message.content
+            break
+
+    res_tech = res_message[0].text.value
+    return res_tech
+
+
+def get_main_function(code_thread_id, language):
+    thread_code_list = get_thread_message(code_thread_id)
+
+    code_assistant_client = OpenAI(api_key=GPT_SECRET_KEY)
+    main_function_thread = code_assistant_client.beta.threads.create()
+    main_function_thread_id = main_function_thread.id
+
+    main_function_assistant_id = ENG_MAIN_FUNCTION_ASSISTANT_ID
+    if language == "KOR":
+        main_function_assistant_id = KOR_MAIN_FUNCTION_ASSISTANT_ID
+
+    for message in thread_code_list:
+        code_assistant_client.beta.threads.messages.create(
+            main_function_thread_id,
+            role="user",
+            content=message
+        )
+
+    run = code_assistant_client.beta.threads.runs.create(
+        thread_id=main_function_thread_id,
+        assistant_id=main_function_assistant_id
+    )
+
+    while run.status == "queued" or run.status == "in_progress":
+        run = code_assistant_client.beta.threads.runs.retrieve(
+            thread_id=main_function_thread_id,
+            run_id=run.id
+        )
+        time.sleep(2)
+        logging.info(f"Run status: {run}")
+    logging.info(f"Run status: {run}")
+
+    if run.status == "failed":
+        return "failed", "failed", "failed"
+
+    messages = code_assistant_client.beta.threads.messages.list(
+        thread_id=main_function_thread_id
+    )
+    res_message = ""
+
+    for message in messages:
+        if message.role == 'assistant':
+            res_message = message.content
+            break
+
+    res_tech = res_message[0].text.value
+    return res_tech
+
+
+def get_core_algorithm(code_thread_id, language):
+    thread_code_list = get_thread_message(code_thread_id)
+
+    code_assistant_client = OpenAI(api_key=GPT_SECRET_KEY)
+    core_algorithm_thread = code_assistant_client.beta.threads.create()
+    core_algorithm_thread_id = core_algorithm_thread.id
+
+    core_algorithm_assistant_id = ENG_CORE_ALGORITHM_ASSISTANT_ID
+    if language == "KOR":
+        core_algorithm_assistant_id = KOR_CORE_ALGORITHM_ASSISTANT_ID
+
+    for message in thread_code_list:
+        code_assistant_client.beta.threads.messages.create(
+            core_algorithm_thread_id,
+            role="user",
+            content=message
+        )
+
+    run = code_assistant_client.beta.threads.runs.create(
+        thread_id=core_algorithm_thread_id,
+        assistant_id=core_algorithm_assistant_id
+    )
+
+    while run.status == "queued" or run.status == "in_progress":
+        run = code_assistant_client.beta.threads.runs.retrieve(
+            thread_id=core_algorithm_thread_id,
+            run_id=run.id
+        )
+        time.sleep(2)
+        logging.info(f"Run status: {run}")
+    logging.info(f"Run status: {run}")
+
+    if run.status == "failed":
+        return "failed", "failed", "failed"
+
+    messages = code_assistant_client.beta.threads.messages.list(
+        thread_id=core_algorithm_thread_id
+    )
+    res_message = ""
+
+    for message in messages:
+        if message.role == 'assistant':
+            res_message = message.content
+            break
+
+    res_core_algorithm = res_message[0].text.value
+    return res_core_algorithm
+
+
+def get_outline(content, language):
+    code_assistant_client = OpenAI(api_key=GPT_SECRET_KEY)
+    outline_thread = code_assistant_client.beta.threads.create()
+    outline_thread_id = outline_thread.id
+
+    outline_assistant_id = ENG_OUTLINE_ASSISTANT_ID
+    if language == "KOR":
+        outline_assistant_id = KOR_OUTLINE_ASSISTANT_ID
+
+    content_slice_list = slice_blog(content)
+
+    for content_slice in content_slice_list:
+        code_assistant_client.beta.threads.messages.create(
+            outline_thread_id,
+            role="user",
+            content=content_slice
+        )
+
+    run = code_assistant_client.beta.threads.runs.create(
+        thread_id=outline_thread_id,
+        assistant_id=outline_assistant_id
+    )
+
+    while run.status == "queued" or run.status == "in_progress":
+        run = code_assistant_client.beta.threads.runs.retrieve(
+            thread_id=outline_thread_id,
+            run_id=run.id
+        )
+        time.sleep(2)
+        # logging.info(f"Run status: {run}")
+
+    if run.status == "failed":
+        return "failed", "failed", "failed"
+
+    messages = code_assistant_client.beta.threads.messages.list(
+        thread_id=outline_thread_id
+    )
+    res_message = ""
+
+    for message in messages:
+        if message.role == 'assistant':
+            res_message = message.content
+            break
+
+    res_outline = res_message[0].text.value
+    return res_outline
+
+
 def slice_blog(res_blog):
     slice_limit = 32000
     blog_parts = []
@@ -361,6 +591,46 @@ def slice_blog(res_blog):
             blog_parts.append(res_blog[i:i+slice_limit])
 
     return blog_parts
+
+
+def get_content(content_thread_id, language):
+    print(content_thread_id, language)
+    code_assistant_client = OpenAI(api_key=GPT_SECRET_KEY)
+
+    assistant_id = ENG_CODE_ASSISTANT_ID
+    if language == "KOR":
+        assistant_id = KOR_CODE_ASSISTANT_ID
+
+    run = code_assistant_client.beta.threads.runs.create(
+        thread_id=content_thread_id,
+        assistant_id=assistant_id
+    )
+
+    while run.status == "queued" or run.status == "in_progress":
+        run = code_assistant_client.beta.threads.runs.retrieve(
+            thread_id=content_thread_id,
+            run_id=run.id
+        )
+        time.sleep(2)
+
+    if run.status == "failed":
+        return "failed", "failed", "failed"
+
+    messages = code_assistant_client.beta.threads.messages.list(
+        thread_id=content_thread_id
+    )
+
+    res_message = ""
+
+    for message in messages:
+        if message.role == 'assistant':
+            res_message = message.content
+
+    # 본문 추출
+    res_blog = res_message[0].text.value
+    ###############################################################################################
+    # TODO: TITLE, OUTLINE 비동기 처리 메서드 종료 후 실행
+    return res_blog
 
 
 def get_assistant_response(prompt_ary, language):
@@ -415,44 +685,56 @@ def get_assistant_response(prompt_ary, language):
         )
         # print("메시지 전송")
 
-    ###############################################################################################
-    ###############################################################################################
-    ###############################################################################################
-
-    run = code_assistant_client.beta.threads.runs.create(
-        thread_id=content_thread_id,
-        assistant_id=assistant_id
-    )
-
-    while run.status == "queued" or run.status == "in_progress":
-        run = code_assistant_client.beta.threads.runs.retrieve(
-            thread_id=content_thread_id,
-            run_id=run.id
-        )
-        time.sleep(2)
-        # logging.info(f"Run status: {run}")
-
-    if run.status == "failed":
-        return "failed", "failed", "failed"
-
-    messages = code_assistant_client.beta.threads.messages.list(
-        thread_id=content_thread_id
-    )
-
-    res_message = ""
-
-    for message in messages:
-        if message.role == 'assistant':
-            res_message = message.content
-
-    # 본문 추출
-    res_blog = res_message[0].text.value
     res_tech_stack = []
-    # TODO: ################################ title feature ###########################################
-    # TODO: 제목 뽑기
-    res_title = get_title(res_blog, language)
+    from .AiTask import get_content_task, get_tech_stack_task, get_main_function_task, get_core_algorithm_task, get_title_task, get_outline_task
+    res_content = get_content_task.delay(content_thread_id, language)
+    # TODO: ################################ stack feature ###########################################
+    tech_stack_content_task = get_tech_stack_task.delay(content_thread_id, language)
+    # TODO: ################################ function feature ###########################################
+    main_function_task = get_main_function_task.delay(content_thread_id, language)
+    # TODO: ################################ algorithm feature ###########################################
+    core_algorithm_task = get_core_algorithm_task.delay(content_thread_id, language)
 
-    return res_blog, res_tech_stack, res_title, content_thread_id
+
+    while True:
+        if res_content.ready():
+            break
+        time.sleep(1)
+
+    if res_content.result:
+        res_blog = res_content.result
+
+
+    # TODO: ################################ title feature ###########################################
+    title_task = get_title_task.delay(res_blog, language)
+    # TODO: ################################ outline feature ###########################################
+    outline_task = get_outline_task.delay(res_blog, language)
+
+    while True:
+        if title_task.ready() and outline_task.ready():
+            break
+        time.sleep(1)
+
+    if title_task.result and outline_task.result:
+
+        res_title = title_task.result
+        res_outline = outline_task.result
+
+    while True:
+        if tech_stack_content_task.ready() and main_function_task.ready() and core_algorithm_task.ready():
+            break
+        time.sleep(1)
+
+    if tech_stack_content_task.result and main_function_task.result and core_algorithm_task.result:
+        res_tech_stack_content = tech_stack_content_task.result
+        res_main_function = main_function_task.result
+        res_core_algorithm = core_algorithm_task.result
+
+    combine_content = (res_outline + "\n\n" +
+                       res_tech_stack_content + "\n\n" +
+                       res_main_function + "\n\n" +
+                       res_core_algorithm)
+    return combine_content, res_tech_stack, res_title, content_thread_id
 
 
 def get_github_latest_sha(url):
