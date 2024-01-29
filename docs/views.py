@@ -25,6 +25,7 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.conf import settings
+import datetime
 from django.core.files.storage import default_storage
 
 import boto3
@@ -495,22 +496,29 @@ class DocsSearchView(APIView):
         }, status=status.HTTP_200_OK)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class UploadImageView(View):
     def post(self, request, *args, **kwargs):
-        file = request.FILES['file']
+        try:
+            file = request.FILES.get('file')
 
-        if file:
-            # s3 업로드
-            s3 = boto3.client('s3')
-            s3.upload_fileobj(file, 'gtd-s3bucket', f'dev/{file.name}')
+            timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")
 
-            # CloudFront URL
-            cloudfront_url = 'https://d1349rlbgsc009.cloudfront.net'
-            file_url = f'{cloudfront_url}/dev/{file.name}'
+            filename = f'{timestamp}'
+            key = f'dev/{filename}'
+            s3 = boto3.client(
+                's3',
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
+            )
 
-            # # DB 저장
-            # uploaded_image = S3Img.objects.create(image=file_url)
+            # S3에 이미지 업로드
+            s3.upload_fileobj(file, settings.AWS_STORAGE_BUCKET_NAME, key)
 
-            return JsonResponse({'url': file_url})
-        else:
-            return JsonResponse({'error': 'No image file provided'}, status=400)
+            cloudfront_url = f'https://d1349rlbgsc009.cloudfront.net/{key}'
+
+            return JsonResponse({'imageUrl': cloudfront_url})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+        return JsonResponse({'error': 'Invalid request'}, status=400)

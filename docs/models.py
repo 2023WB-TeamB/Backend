@@ -32,5 +32,8 @@ class Keywords(models.Model):
 class S3Img(models.Model):
     image = models.ImageField(upload_to='dev/')
 
-    def __str__(self):
-        return self.image.name
+    # def __str__(self):
+    #     return self.image.name
+    def get_cloudfront_url(self):
+        cloudfront_domain = 'https://d1349rlbgsc009.cloudfront.net'  # CloudFront 도메인
+        return f'https://{cloudfront_domain}/{self.image.name}'
