@@ -18,6 +18,20 @@ import requests
 import json
 import environ
 
+# s3
+from django.http import JsonResponse
+from django.views import View
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.conf import settings
+import datetime
+from os.path import splitext
+from django.core.files.storage import default_storage
+
+import boto3
+from PIL import Image
+from io import BytesIO
+
 # swagger 관련
 from rest_framework.views import APIView
 from drf_yasg.utils import swagger_auto_schema, no_body
@@ -223,7 +237,7 @@ class DocsAPI(APIView):
 
         # TODO: 찾아낸 Framework를 활용하여 GitHub 코드 추출
         if root_file:
-        # TODO ##############################################get_file_content####################################################
+            # TODO ##############################################get_file_content####################################################
             prompt_ary = get_github_code_prompt(repository_url, framework)
         ######################################################################################################
             from .github import get_assistant_response_task
@@ -289,7 +303,7 @@ class DocsAPI(APIView):
         return Response({"message": "문서 생성 성공", "status": 201, "data": res_data}, status=status.HTTP_201_CREATED)
         # TODO: 추출한 코드를 활용하여 문서 생성
 
-        
+
 class DocsVersionList(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -554,3 +568,35 @@ class DocsSearchView(APIView):
             "status": 200,
             "data": serializer.data
         }, status=status.HTTP_200_OK)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class UploadImageView(View):
+    def post(self, request, *args, **kwargs):
+        try:
+            file = request.FILES.get('file')
+
+            # 확장자명 추출
+            ext = splitext(file.name)[1]
+
+            timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")
+
+            filename = f'{timestamp}{ext}'
+            key = f'dev/{filename}'
+            s3 = boto3.client(
+                's3',
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
+            )
+
+            # S3에 이미지 업로드, Content-Disposition을 inline으로 설정
+            s3.upload_fileobj(file, settings.AWS_STORAGE_BUCKET_NAME, key,
+                              ExtraArgs={'ContentType': file.content_type, 'ContentDisposition': 'inline'})
+
+            cloudfront_url = f'https://d1349rlbgsc009.cloudfront.net/{key}'
+
+            return JsonResponse({'imageUrl': cloudfront_url})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+        return JsonResponse({'error': 'Invalid request'}, status=400)
