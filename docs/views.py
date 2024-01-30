@@ -455,7 +455,6 @@ class DocsDetail(APIView):  # Docs의 detail을 보여주는 역할
 
 
 class DocsShareView(APIView):
-    permission_classes = [IsAuthenticated]
     generated_uuid = None
 
     @swagger_auto_schema(tags=["Docs"], operation_summary="문서 공유 API", request_body=SwaggerDocsSharePostSerializer)
