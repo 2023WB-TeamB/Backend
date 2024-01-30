@@ -11,6 +11,13 @@ class KeywordsSerializer(serializers.ModelSerializer):
         fields = ['name']
 
 
+class DocsShareSerializer(serializers.ModelSerializer):
+    keywords = KeywordsSerializer(source='keywords_set', many=True)
+
+    class Meta:
+        model = Docs
+        fields = ['id', 'title', 'content', 'keywords', 'repository_url', 'url', 'language', 'created_at', 'updated_at', 'color']
+
 class DocsSearchSerializer(serializers.ModelSerializer):
     keywords = KeywordsSerializer(source='keywords_set', many=True)
 
