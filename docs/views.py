@@ -13,7 +13,6 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
 from .github import *
-from .AiTask import *
 import uuid
 import requests
 import json
@@ -110,16 +109,63 @@ class DocsAPI(APIView):
             github_latest_sha = get_github_latest_sha(repository_url)
 
             if old_docs_sha == github_latest_sha and old_docs.thread_id != "":
-                # old_docs의 thread_id를 가져옴
-                response = assistant_run(language, old_docs.thread_id)
-                if response == "failed":
+                from .AiTask import get_content_task, get_tech_stack_task, get_main_function_task, \
+                    get_core_algorithm_task, get_title_task, get_outline_task
+                res_content = get_content_task.delay(old_docs.thread_id, language)
+                # TODO: ################################ stack feature ###########################################
+                tech_stack_content_task = get_tech_stack_task.delay(old_docs.thread_id, language)
+                # TODO: ################################ function feature ###########################################
+                main_function_task = get_main_function_task.delay(old_docs.thread_id, language)
+                # TODO: ################################ algorithm feature ###########################################
+                core_algorithm_task = get_core_algorithm_task.delay(old_docs.thread_id, language)
+
+                while True:
+                    if res_content.ready():
+                        break
+                    time.sleep(1)
+
+                if res_content.result:
+                    res_blog = res_content.result
+
+                while True:
+                    if tech_stack_content_task.ready() and main_function_task.ready() and core_algorithm_task.ready():
+                        break
+                    time.sleep(1)
+
+                if tech_stack_content_task.result and main_function_task.result and core_algorithm_task.result:
+                    res_tech_stack_content = tech_stack_content_task.result
+                    res_main_function = main_function_task.result
+                    res_core_algorithm = core_algorithm_task.result
+
+                if res_blog == "failed":
                     return Response({'message': 'GPT API Server Error.', 'status': 500},
                                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                elif response != "not found thread":
+                elif res_blog != "not found thread":
                     # serializer를 통해 데이터로 변환 후 db에 저장 후 꺼내오기
+                    from .AiTask import get_title_task, get_outline_task
+
+                    # TODO: ################################ title feature ###########################################
+                    title_task = get_title_task.delay(res_blog, language)
+                    # TODO: ################################ outline feature ###########################################
+                    outline_task = get_outline_task.delay(res_blog, language)
+
+                    while True:
+                        if title_task.ready() and outline_task.ready():
+                            break
+                        time.sleep(1)
+
+                    if title_task.result and outline_task.result:
+                        res_title = title_task.result
+                        res_outline = outline_task.result
+
+                    combine_content = (res_outline + "\n\n" +
+                                       res_tech_stack_content + "\n\n" +
+                                       res_main_function + "\n\n" +
+                                       res_core_algorithm)
+
                     request.data['user_id'] = user_id
-                    request.data['title'] = get_title(response, language)
-                    request.data['content'] = response
+                    request.data['title'] = res_title
+                    request.data['content'] = combine_content
                     request.data['language'] = language
                     request.data['color'] = color
                     request.data['thread_id'] = old_docs.thread_id
@@ -144,7 +190,7 @@ class DocsAPI(APIView):
                         res_data = {
                             "docs_id": new_docs.id,
                             "title": new_docs.title,
-                            "content": new_docs.content + badge_tags,
+                            "content": new_docs.content.replace('. ', '\n') + badge_tags,
                             "language": new_docs.language,
                             "tech_stack": [],
                             "color": new_docs.color,
@@ -193,24 +239,28 @@ class DocsAPI(APIView):
         if root_file:
             # TODO ##############################################get_file_content####################################################
             prompt_ary = get_github_code_prompt(repository_url, framework)
-            ######################################################################################################
+        ######################################################################################################
+            from .github import get_assistant_response_task
+            res_data = get_assistant_response_task(prompt_ary, language)
 
-            res_data = get_assistant_response_task.delay(prompt_ary, language)
+        # while True:
+        #     if res_data.ready():
+        #         break
+        #     time.sleep(1)
 
-        while True:
-            if res_data.ready():
-                break
-            time.sleep(1)
-
-        if res_data.result:
-            if res_data.result == "failed":
+        # if res_data.result:
+        #     if res_data.result == "failed":
+        #         return Response({'message': 'GPT API Server Error.', 'status': 500},
+        #                         status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        if res_data:
+            if res_data == "failed":
                 return Response({'message': 'GPT API Server Error.', 'status': 500},
                                 status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            response = res_data.result['response']
-            stack = res_data.result['stack']
-            res_title = res_data.result['res_title']
-            thread_id = res_data.result["thread_id"]
+            response = res_data['response']
+            stack = res_data['stack']
+            res_title = res_data['res_title']
+            thread_id = res_data["thread_id"]
         else:
             return Response({"message": "문서 생성 실패", "status": 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -406,6 +456,7 @@ class DocsDetail(APIView):  # Docs의 detail을 보여주는 역할
 
 class DocsShareView(APIView):
     permission_classes = [IsAuthenticated]
+    generated_uuid = None
 
     @swagger_auto_schema(tags=["Docs"], operation_summary="문서 공유 API", request_body=SwaggerDocsSharePostSerializer)
     def post(self, request, *args, **kwargs):
@@ -423,9 +474,31 @@ class DocsShareView(APIView):
         # UID를 사용하여 고유한 URL 생성
         base_url = 'https://gitodoc.kro.kr/api/v1/docs/share/'
         unique_url = base_url + str(uuid.uuid4())
+        self.generated_uuid = str(uuid.uuid4())
+        unique_url = base_url + self.generated_uuid
         doc.url = unique_url
         doc.save()
         return Response({"message": "URL이 생성되었습니다.", "url": unique_url}, status=status.HTTP_201_CREATED)
+
+    @swagger_auto_schema(tags=["Docs"], operation_summary="공유 문서 조회 API", request_body=no_body)
+    def get(self, request, *args, **kwargs):
+        uuid_value = request.GET.get('uuid')
+        if uuid_value is None:
+            return Response({"message": "UUID를 입력해 주세요.", "status": 400}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            doc = Docs.objects.get(url__endswith=uuid_value)  # uuid 값으로 DB 대조
+        except Docs.DoesNotExist:
+            return Response({"message": "존재하지 않는 UUID입니다.", "status": 404}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = DocsSerializer(doc)
+
+        return Response({
+            "message": "공유 문서 조회 성공",
+            "status": 200,
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
+
 
 
 class DocsContributorView(APIView):
