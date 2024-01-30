@@ -53,25 +53,25 @@ class RegisterAPIView(APIView):
             )
 
             welcome_docs_1 = Docs(user_id=user,
-                                    title="Welcome to GTD!",
-                                    content="GTD를 사용해주셔서 감사합니다.",
-                                    repository_url="", url="", language="KOR",
-                                    color="#99CCFF", thread_id="", commit_sha="")
+                                  title="Welcome to GTD!",
+                                  content="GiToDoc을 찾아주셔서 감사합니다.",
+                                  repository_url="", url="", language="KOR",
+                                  color="#f44336", thread_id="", commit_sha="")
             welcome_docs_2 = Docs(user_id=user,
-                                    title="Let's Get Started!",
-                                    content="서비스를 시작하는 방법에 대한 안내입니다.",
-                                    repository_url="", url="", language="KOR",
-                                    color="#E87F7F", thread_id="", commit_sha="")
+                                  title="Let's Get Started!",
+                                  content="GiToDoc은 GitHub 연동을 통한 문서 자동화 서비스입니다. GitHub Repository URL을 입력하면 누구나 손쉽게 기술 문서를 만들 수 있습니다. 바로 지금 당신만의 기술 문서를 만들어 보세요!",
+                                  repository_url="", url="", language="KOR",
+                                  color="#009688", thread_id="", commit_sha="")
             welcome_docs_3 = Docs(user_id=user,
-                                    title="Feature Fiesta!",
-                                    content="서비스의 주요 기능에 대해 설명합니다.",
-                                    repository_url="", url="", language="KOR",
-                                    color="#B3A7FE", thread_id="", commit_sha="")
+                                  title="Feature Fiesta!",
+                                  content="GiToDoc에서는 프로젝트 문서를 생성하고 편집, 공유할 수 있습니다. 또한 당신의 기여도를 측정한 멋진 뱃지도 만들 수 있습니다! 문서 뷰어 우측 하단에 있는 뱃지 가이드를 참고하세요.",
+                                  repository_url="", url="", language="KOR",
+                                  color="#3f51b5", thread_id="", commit_sha="")
             welcome_docs_4 = Docs(user_id=user,
-                                    title="Help is Here!",
-                                    content="Stuck somewhere? We're here to help. Check out this guide!",
-                                    repository_url="", url="", language="KOR",
-                                    color="#F59D5D", thread_id="", commit_sha="")
+                                  title="English Guide",
+                                  content="GiToDoc is a document automation service through GitHub integration. By entering the GitHub Repository URL, anyone can easily create technical documentation. Create your own technical documentation right now! You can create, edit, and share project documents. You can also create a cool badge that measures your contribution! Please refer to the badge guide in the bottom right of the document viewer.",
+                                  repository_url="", url="", language="ENG",
+                                  color="#ff9800", thread_id="", commit_sha="")
 
             welcome_docs_1.save()
             welcome_docs_2.save()
