@@ -95,16 +95,63 @@ class DocsAPI(APIView):
             github_latest_sha = get_github_latest_sha(repository_url)
 
             if old_docs_sha == github_latest_sha and old_docs.thread_id != "":
-                # old_docs의 thread_id를 가져옴
-                response = assistant_run(language, old_docs.thread_id)
-                if response == "failed":
+                from .AiTask import get_content_task, get_tech_stack_task, get_main_function_task, \
+                    get_core_algorithm_task, get_title_task, get_outline_task
+                res_content = get_content_task.delay(old_docs.thread_id, language)
+                # TODO: ################################ stack feature ###########################################
+                tech_stack_content_task = get_tech_stack_task.delay(old_docs.thread_id, language)
+                # TODO: ################################ function feature ###########################################
+                main_function_task = get_main_function_task.delay(old_docs.thread_id, language)
+                # TODO: ################################ algorithm feature ###########################################
+                core_algorithm_task = get_core_algorithm_task.delay(old_docs.thread_id, language)
+
+                while True:
+                    if res_content.ready():
+                        break
+                    time.sleep(1)
+
+                if res_content.result:
+                    res_blog = res_content.result
+
+                while True:
+                    if tech_stack_content_task.ready() and main_function_task.ready() and core_algorithm_task.ready():
+                        break
+                    time.sleep(1)
+
+                if tech_stack_content_task.result and main_function_task.result and core_algorithm_task.result:
+                    res_tech_stack_content = tech_stack_content_task.result
+                    res_main_function = main_function_task.result
+                    res_core_algorithm = core_algorithm_task.result
+
+                if res_blog == "failed":
                     return Response({'message': 'GPT API Server Error.', 'status': 500},
                                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-                elif response != "not found thread":
+                elif res_blog != "not found thread":
                     # serializer를 통해 데이터로 변환 후 db에 저장 후 꺼내오기
+                    from .AiTask import get_title_task, get_outline_task
+
+                    # TODO: ################################ title feature ###########################################
+                    title_task = get_title_task.delay(res_blog, language)
+                    # TODO: ################################ outline feature ###########################################
+                    outline_task = get_outline_task.delay(res_blog, language)
+
+                    while True:
+                        if title_task.ready() and outline_task.ready():
+                            break
+                        time.sleep(1)
+
+                    if title_task.result and outline_task.result:
+                        res_title = title_task.result
+                        res_outline = outline_task.result
+
+                    combine_content = (res_outline + "\n\n" +
+                                       res_tech_stack_content + "\n\n" +
+                                       res_main_function + "\n\n" +
+                                       res_core_algorithm)
+
                     request.data['user_id'] = user_id
-                    request.data['title'] = get_title(response, language)
-                    request.data['content'] = response
+                    request.data['title'] = res_title
+                    request.data['content'] = combine_content
                     request.data['language'] = language
                     request.data['color'] = color
                     request.data['thread_id'] = old_docs.thread_id
