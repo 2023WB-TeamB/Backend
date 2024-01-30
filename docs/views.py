@@ -441,7 +441,7 @@ class DocsShareView(APIView):
         except Docs.DoesNotExist:
             return Response({"message": "존재하지 않는 UUID입니다.", "status": 404}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = DocsSerializer(doc)
+        serializer = DocsShareSerializer(doc)
 
         return Response({
             "message": "공유 문서 조회 성공",
