@@ -421,7 +421,7 @@ class DocsShareView(APIView):
             return Response({"message": "이미 URL이 생성된 문서입니다.", "status": 409, "existing_url": doc.url},
                             status=status.HTTP_409_CONFLICT)
         # UID를 사용하여 고유한 URL 생성
-        base_url = 'https://gitodoc.kro.kr/api/v1/docs/share/'
+        base_url = 'https://gitodoc.kro.kr/share/'
         unique_url = base_url + str(uuid.uuid4())
         self.generated_uuid = str(uuid.uuid4())
         unique_url = base_url + self.generated_uuid
