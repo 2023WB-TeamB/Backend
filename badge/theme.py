@@ -11,35 +11,14 @@ import requests
 import json
 
 
-# parameter가 너무 많아 나중에 Tuple로 묶어서 넘겨주는 방식으로 변경
+# TODO: parameter가 너무 많아 나중에 Tuple로 묶어서 넘겨주는 방식으로 변경
 def terminal1(request, github_user_organization, repo_name, github_user, repository_url, headers):
-    # TODO: github_user, repo_name 으로 문서화된 레포지토리가 있는지 확인
-    # TODO: ! Docs ID 검색 후 badge filter까지 하면 로직이 하나 늘어나는거기 때문에 바로 badge filter로 검색
-    # TODO: - 문서화된 레포지토리가 있으면(변경됨)
-    # TODO: - - Docs Id와 연결된 badge db에서 repo_name과 github_user로 조회(변경됨)
-    # TODO: - - badge db에서 repo_name과 github_user로 조회
-    # TODO: - - data를 받아온 후 template에 넣어서 return
-
-    # TODO: - 문서화된 레포지토리가 없으면
-    # TODO: - - badge db에서 repo_name과 github_user로 조회
-    # TODO: - - 정보가 있으면
-    # TODO: - - - data를 받아온 후 template에 넣어서 return
-
-    # TODO: - - 정보가 없으면
-    # TODO: - - - Repository, github_user 분석 후 유효한 데이터 인 경우에 badge db에 저장
-    # TODO: - - - data를 받아온 후 template에 넣어서 return (위쪽과 동일 로직 -> 함수로 빼기)
-
-    # TODO: ! 닉네임을 변경한 경우? 어떻게 처리할지 고민할 것
-    # TODO: ! 만약 이미 뱃지를 사용하던 유저가 문서화를 진행할 경우? -> 문서화 진행 시 뱃지 생성 -> 뱃지 업데이트
 
     # 뱃지에 등록된 데이터가 있는 경우
     if Badge.objects.filter(github_id=github_user, repository_url=repository_url).exists():
         badge = Badge.objects.get(github_id=github_user, repository_url=repository_url)
 
-    # DataBase에 Badge Data가 없는 경우
     else:
-
-        # TODO: Github Repository 유효성 검사
         try:
             result = requests.get(f"https://api.github.com/repos/{github_user_organization}/{repo_name}/contributors",
                                   headers=headers)
@@ -49,13 +28,11 @@ def terminal1(request, github_user_organization, repo_name, github_user, reposit
         if result.status_code != 200:
             return Response({'message': '유효한 레포지토리 URL을 입력해 주세요.', 'status': 404}, status=status.HTTP_404_NOT_FOUND)
 
-        # TODO: 유효한 경우 Repository Contributor에 user가 있는지 검사
         contributors = json.loads(result.text)
         if not any(contributor['login'] == github_user for contributor in contributors):
             return Response({'message': f'{github_user}님은 {repo_name}에 Contributor로 등록되지 않았습니다.', 'status': 400},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        # TODO: GitHub Logic을 통해 데이터 받아오기
         pr_response = requests.get(
             f"https://api.github.com/repos/{github_user_organization}/{repo_name}/pulls?state=all", headers=headers)
 
@@ -113,7 +90,6 @@ def terminal1(request, github_user_organization, repo_name, github_user, reposit
 
 
 def card1(request, github_user_organization, repo_name, github_user, headers):
-    # TODO: Github Repository 유효성 검사
     try:
         result = requests.get(f"https://api.github.com/repos/{github_user_organization}/{repo_name}/contributors",
                               headers=headers)
@@ -123,13 +99,11 @@ def card1(request, github_user_organization, repo_name, github_user, headers):
     if result.status_code != 200:
         return Response({'message': '유효한 레포지토리 URL을 입력해 주세요.', 'status': 404}, status=status.HTTP_404_NOT_FOUND)
 
-    # TODO: 유효한 경우 Repository Contributor에 user가 있는지 검사
     contributors = json.loads(result.text)
     if not any(contributor['login'] == github_user for contributor in contributors):
         return Response({'message': f'{github_user}님은 {repo_name}에 Contributor로 등록되지 않았습니다.', 'status': 400},
                         status=status.HTTP_400_BAD_REQUEST)
 
-    # TODO: GitHub Logic을 통해 데이터 받아오기
     contributor_list = []
 
     for contributor in contributors:
@@ -138,11 +112,8 @@ def card1(request, github_user_organization, repo_name, github_user, headers):
             'avatar_url': contributor['avatar_url'],
         }
         contributor_list.append(data)
-    #######################################################################################################
 
     template = loader.get_template('tag/card1.html')
-    # TODO: 받아야할것
-    # TODO: stack1, stack2, reponame, organization, contributor, start, end
     stack1 = request.GET.get('stack1', "")
     stack2 = request.GET.get('stack2', "")
 
@@ -165,7 +136,6 @@ def card1(request, github_user_organization, repo_name, github_user, headers):
 
 
 def terminal2(request, github_user_organization, repo_name, github_user, dark_light, headers):
-    # TODO: Github Repository 유효성 검사
     try:
         result = requests.get(f"https://api.github.com/repos/{github_user_organization}/{repo_name}/contributors",
                               headers=headers)
@@ -175,29 +145,14 @@ def terminal2(request, github_user_organization, repo_name, github_user, dark_li
     if result.status_code != 200:
         return Response({'message': '유효한 레포지토리 URL을 입력해 주세요.', 'status': 404}, status=status.HTTP_404_NOT_FOUND)
 
-    # TODO: 유효한 경우 Repository Contributor에 user가 있는지 검사
     contributors = json.loads(result.text)
     if not any(contributor['login'] == github_user for contributor in contributors):
         return Response({'message': f'{github_user}님은 {repo_name}에 Contributor로 등록되지 않았습니다.', 'status': 400},
                         status=status.HTTP_400_BAD_REQUEST)
 
-    # TODO: GitHub Logic을 통해 데이터 받아오기
-    # contributor_list = []
-    #
-    # for contributor in contributors:
-    #     data = {
-    #         'contributor': contributor['login'],
-    #         'avatar_url': contributor['avatar_url'],
-    #     }
-    #     contributor_list.append(data)
-    #######################################################################################################
-
     template = loader.get_template('tag/terminal2.html')
     stack1 = request.GET.get('stack1', "")
     stack2 = request.GET.get('stack2', "")
-
-    # if get_tech_image(stack1) is False or get_tech_image(stack2) is False:
-    #     return Response({'message': '유효한 기술 스택을 입력해 주세요.', 'status': 404}, status=status.HTTP_404_NOT_FOUND)
 
     context = {
         'organization': github_user_organization, 'repo_name': repo_name,

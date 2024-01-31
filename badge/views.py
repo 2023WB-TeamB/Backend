@@ -12,16 +12,14 @@ from .theme import *
 import environ
 import requests
 import json
-
 from datetime import datetime
-# Flutter, React Native
-# Angular, Next, Nuxt, React, Svelte, Vue, Unity
-# Django, Flask, FastAPI, Node, Spring, SpringBoot
-
 # swagger 관련
 from rest_framework.views import APIView
 from drf_yasg.utils import swagger_auto_schema
 
+# 지원하는 기술 스택 이미지 목록
+# Flutter, React Native, Angular, Next, Nuxt, React, Svelte, Vue, Unity, Django, Flask, FastAPI, Node, Spring, SpringBoot
+# parameter 입력시 소문자로 입력해야 합니다.
 class BadgeView(APIView):
     @swagger_auto_schema(tags=["Badge"], operation_summary="뱃지 조회 API")
     def get(self, request, github_user_organization, repo_name, github_user, *args, **kwargs):
@@ -56,9 +54,7 @@ class BadgeView(APIView):
             start_date = request.GET.get("start", None)
             end_date = request.GET.get("end", None)
 
-            # 날짜 Validation
             try:
-                # 입력된 문자열을 날짜로 변환합니다.
                 start_date_obj = datetime.strptime(start_date, '%Y%m%d')
                 end_date_obj = datetime.strptime(end_date, '%Y%m%d')
                 transformed_start_date_str = datetime.strftime(start_date_obj, '%Y-%m-%d')
@@ -72,9 +68,7 @@ class BadgeView(APIView):
             start_date = request.GET.get("start", None)
             end_date = request.GET.get("end", None)
 
-            # 날짜 Validation
             try:
-                # 입력된 문자열을 날짜로 변환합니다.
                 start_date_obj = datetime.strptime(start_date, '%Y%m%d')
                 end_date_obj = datetime.strptime(end_date, '%Y%m%d')
                 transformed_start_date_str = datetime.strftime(start_date_obj, '%Y-%m-%d')
