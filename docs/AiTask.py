@@ -6,12 +6,6 @@ from .github import *
 import logging
 
 
-@app.task(name='delayed_task')
-def delayed_task():
-    time.sleep(30)
-    return 'delayed_task'
-
-
 @app.task(name='framework_finder_task')
 def framework_finder_task(repository_url, root_file):
     framework = framework_finder(repository_url, root_file)

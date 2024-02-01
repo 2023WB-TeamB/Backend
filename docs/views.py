@@ -94,29 +94,24 @@ class DocsAPI(APIView):
         if url_validator(repository_url) is False:
             return Response({"message": "유효하지 않은 URL입니다.", "status": 404}, status=status.HTTP_400_BAD_REQUEST)
 
-        ########################################################################################################################
-        ##################################################### Future ###########################################################
-        ########################################################################################################################
         # 이미 생성한적이 있는 문서 (지운적 있더라도)
         if Docs.objects.filter(user_id=user_id, repository_url=repository_url).exists():
             # 가장 최신 데이터를 가져옴
             old_docs = Docs.objects.filter(user_id=user_id, repository_url=repository_url).order_by(
                 '-created_at').first()
 
-            # TODO: 최신 Repo의 Default Branch node hash가져오기
-            # TODO: hash가 같을 경우 (코드 변경점 없음)
-            # TODO: - run만 다시
+            # 최신 Repo의 Default Branch node sha값 가져오기
+            # sha가 같을 경우 (코드 변경점 없음)
+            # - run만 다시
             old_docs_sha = old_docs.commit_sha
             github_latest_sha = get_github_latest_sha(repository_url)
 
             if old_docs_sha == github_latest_sha and old_docs.thread_id != "":
-                # old_docs의 thread_id를 가져옴
                 response = assistant_run(language, old_docs.thread_id)
                 if response == "failed":
                     return Response({'message': 'GPT API Server Error.', 'status': 500},
                                     status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 elif response != "not found thread":
-                    # serializer를 통해 데이터로 변환 후 db에 저장 후 꺼내오기
                     request.data['user_id'] = user_id
                     request.data['title'] = get_title(response, language)
                     request.data['content'] = response
@@ -124,7 +119,6 @@ class DocsAPI(APIView):
                     request.data['color'] = color
                     request.data['thread_id'] = old_docs.thread_id
                     request.data['commit_sha'] = old_docs.commit_sha
-                    # TODO: Database에 docs 저장 후
                     serializer = DocsSerializer(data=request.data)
                     if serializer.is_valid():
                         new_docs = serializer.save()
@@ -156,10 +150,7 @@ class DocsAPI(APIView):
                     else:
                         return Response({"message": "문서 생성 실패", "status": 500},
                                         status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-            # hash가 다를 경우 (코드 변경점 있음)
-            # - 원래 로직대로 진행
 
-        # TODO ##############################################get_file_content#################################################### Solved
         if repository_url.startswith("https://"):
             repository_url = repository_url.replace("https://", "")
 
@@ -168,11 +159,8 @@ class DocsAPI(APIView):
         repo = repo_url_list[2].split(".")[0]
         path = ''
         root_file = get_file_content(owner, repo, path)
-        ######################################################################################################
 
-        # TODO ##############################################get_file_content#################################################### Solved
         framework = framework_finder_task.delay(repository_url, root_file)
-        ######################################################################################################
         if framework == "failed":
             return Response({'message': 'GPT API Server Error.', 'status': 500},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -187,13 +175,8 @@ class DocsAPI(APIView):
         else:
             return Response({"message": "framework 추출 실패", "status": 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        ####################################################
-
-        # TODO: 찾아낸 Framework를 활용하여 GitHub 코드 추출
         if root_file:
-            # TODO ##############################################get_file_content####################################################
             prompt_ary = get_github_code_prompt(repository_url, framework)
-            ######################################################################################################
 
             res_data = get_assistant_response_task.delay(prompt_ary, language)
 
@@ -228,14 +211,6 @@ class DocsAPI(APIView):
         else:
             return Response({"message": "문서 생성 실패", "status": 500}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        # 기술스택 비활성화
-        # stack_ary = []
-
-        # if stack in ',':
-        #     stack_ary = stack.split(', ')
-        # else:
-        #     stack_ary = stack.split('/')
-
         contributors = get_contributors(owner, repo)
         badge_tags = ""
         for contributor in contributors:
@@ -251,7 +226,6 @@ class DocsAPI(APIView):
             "created_at": docs.created_at,
         }
         return Response({"message": "문서 생성 성공", "status": 201, "data": res_data}, status=status.HTTP_201_CREATED)
-        # TODO: 추출한 코드를 활용하여 문서 생성
 
 
 class DocsVersionList(APIView):
@@ -292,16 +266,16 @@ class DocsVersionList(APIView):
         response_data = {
             "status": 200,
             "message": '문서 조회 성공',
-            "data": dict(docs_data),  # defaultdict를 dict로 변환. defaultdict는 컬렉션을 그룹화할 수 있지만, JSON으로 직렬화할 수 없기 때문.
+            "data": dict(docs_data),
         }
         return Response(response_data, status=status.HTTP_200_OK)
 
 
-class DocsDetail(APIView):  # Docs의 detail을 보여주는 역할
+class DocsDetail(APIView):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(tags=["Docs"], operation_summary="문서 상세 조회 API", request_body=no_body)
-    def get(self, request, *args, **kwargs):  # 문서 상세 조회, get() 메소드에서 URL의 경로 인자를 가져오려면 self.kwargs를 사용해야함.
+    def get(self, request, *args, **kwargs):
         authorization_header = request.META.get('HTTP_AUTHORIZATION')
         if authorization_header and authorization_header.startswith('Bearer '):
             token = authorization_header.split(' ')[1]
@@ -322,7 +296,7 @@ class DocsDetail(APIView):  # Docs의 detail을 보여주는 역할
                 "status": 404,
                 "message": "해당 문서를 찾을 수 없습니다.",
             }, status=status.HTTP_404_NOT_FOUND)
-        serializer = DocsDetailSerializer(docs)  # get 메소드에서 docs_detail 함수를 직접 호출하여 serializer.data를 처리.
+        serializer = DocsDetailSerializer(docs)
 
         return Response({
             "message": "문서 상세 조회 성공",

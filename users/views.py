@@ -25,30 +25,16 @@ class RegisterAPIView(APIView):
     def post(self, request):
         serializer = UserSerializer(data=request.data)
 
-        # 만약 전달된 데이터가 유효하다면
         if serializer.is_valid():
-            # UserSerializer에서 사용자 정보를 저장하고 저장된 사용자 정보를 가져옵니다.
             user = serializer.save()
 
-            # 토큰을 얻기 위해 TokenObtainPairSerializer를 사용합니다.
             token = TokenObtainPairSerializer.get_token(user)
-
-            # 토큰을 문자열로 변환합니다.
             refresh_token = str(token)
             access_token = str(token.access_token)
 
-            # 콘솔에 토큰을 출력합니다.
-            print(refresh_token)
-            print(access_token)
-
             res = Response(
                 {
-                    # "user": serializer.data,
                     "message": "register successs",
-                    # "token": {
-                    #     "access": access_token,
-                    #     "refresh": refresh_token,
-                    # },
                 },
                 status=status.HTTP_200_OK,
             )
@@ -84,16 +70,6 @@ class RegisterAPIView(APIView):
 
             return res
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    # class UserViewset(viewsets.ModelViewSet):
-    #     permission_classes = [IsAuthenticated]
-    #     queryset = User.objects.all()
-    #     serializer_class = SignSerializer
-    #
-    #     def update(self, request, *args, **kwargs):
-    #         kwargs['partial'] = True
-    #         return super().update(request, *args, **kwargs)
-
 
 class AuthAPIView(APIView):
 

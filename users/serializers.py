@@ -23,7 +23,6 @@ class UserSerializer(serializers.ModelSerializer):
 class SignSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        # 모두 직렬화하겠음
         fields = '__all__'
 
 

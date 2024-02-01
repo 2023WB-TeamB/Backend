@@ -113,7 +113,6 @@ class SwaggerDocsPostSerializer(serializers.Serializer):
     color = serializers.CharField()
 
 
-# fields = ('id', 'title', 'content', 'color', 'keywords', 'created_at', 'updated_at',)
 class SwaggerDocsPutSerializer(serializers.Serializer):
     title = serializers.CharField()
     content = serializers.CharField()

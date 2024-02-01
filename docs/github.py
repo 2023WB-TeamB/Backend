@@ -4,7 +4,6 @@ import environ
 from openai import OpenAI
 
 import time
-import logging
 from collections import deque
 
 env = environ.Env(DEBUG=(bool, True))
@@ -102,7 +101,6 @@ def framework_finder(url, root_file):
             thread_id=thread_id,
             run_id=run.id,
         )
-        # logging.info(f"Run status: {run}")
         time.sleep(5)
 
     if run.status == "failed":
@@ -132,9 +130,6 @@ def get_github_code_prompt(url, framework):
     path = ''
     root_file = get_file_content(owner, repo, path)
 
-    ###########################################################################################################################
-    ###########################################################################################################################
-    ###########################################################################################################################
 
     def display_directory_structure(file_structure):
 
@@ -155,11 +150,9 @@ def get_github_code_prompt(url, framework):
             if isImage:
                 continue
 
-            # 디렉토리인 경우 내부 구조 출력
             if element['type'] == "dir":
                 nested_structure = get_file_content(owner, repo, element['path'])
                 if nested_structure:
-                    # 재귀적으로 디렉토리 구조를 child에 저장
                     current_element['child'] = display_directory_structure(nested_structure)
 
             elif element['type'] == "file":
@@ -258,12 +251,9 @@ def get_github_code_prompt(url, framework):
                         data_prmp.append(current_element)
 
                 elif framework == ("Vue.js" or "Vue Vuex") and (
-                        # element['path'].endswith("app.vue") or
-                        # element['path'].startswith("views/") or
                         element['path'].endswith(".vue") or
                         element['path'].endswith(".ts") or
                         element['path'].endswith("package.json")):
-                        #element['path'].startswith("components/")):
                     file_content = get_file_content(owner, repo, element['path'])
                     if 'content' in file_content:
                         decoded_content = base64.b64decode(file_content['content']).decode('utf-8')
@@ -274,11 +264,7 @@ def get_github_code_prompt(url, framework):
 
         return result_structure
 
-    ###########################################################################################################################
-    ###########################################################################################################################
-    ###########################################################################################################################
-
-    # 찾아온 파일이 있을 경우에만 data 뽑아오기 (삭제 X)
+    # Repository에 파일이 있을 경우에만 데이터를 가져오도록 함 (삭제 X)
     if root_file:
         display_directory_structure(root_file)
 
@@ -292,7 +278,6 @@ def get_github_code_prompt(url, framework):
             msg1 = f"path: {data['path']}\ncontent(1): {data['content'][:31000]}"
             msg2 = f"path: {data['path']}\ncontent(2): {data['content'][31000:]}"
             res_ary.append(msg1)
-            # print("메세지 슬라이싱 처리완")
             res_ary.append(msg2)
         else:
             msg = f"path: {data['path']}\ncontent: {data['content']}"
@@ -330,7 +315,6 @@ def get_title(content, language):
             run_id=run.id
         )
         time.sleep(2)
-        # logging.info(f"Run status: {run}")
 
     if run.status == "failed":
         return "failed", "failed", "failed"
@@ -372,11 +356,6 @@ def get_assistant_response(prompt_ary, language):
     if language == "KOR":
         assistant_id = KOR_CODE_ASSISTANT_ID
 
-
-    ###############################################################################################
-    ###############################################################################################
-    ###############################################################################################
-
     while True:
         arr = [len(p) for p in prompt_ary]
         arr_len = len(arr)
@@ -385,9 +364,7 @@ def get_assistant_response(prompt_ary, language):
             break
 
         combine_index = max_elements_subset_indices(arr)
-        # print(combine_index)
 
-        # prompt가 비어있는 경우 프로그램 종료
         if not prompt_ary:
             break
 
@@ -395,29 +372,18 @@ def get_assistant_response(prompt_ary, language):
 
         combine_index_set = set(combine_index)
         prompt_ary = [prompt_ary[i] for i in range(arr_len) if i not in combine_index_set]
-        # print(f"메세지 전송 | {len(combine_message)}길이의 메세지 병합")
-        print(len(combine_message))
         code_assistant_client.beta.threads.messages.create(
             content_thread_id,
             role="user",
             content=combine_message
         )
-        # print("메시지 전송")
 
     if len(arr) == 1:
-        # print(arr)
-        # print(len(prompt_ary))
-        print(len(prompt_ary[0]))
         code_assistant_client.beta.threads.messages.create(
             content_thread_id,
             role="user",
             content=prompt_ary[0]
         )
-        # print("메시지 전송")
-
-    ###############################################################################################
-    ###############################################################################################
-    ###############################################################################################
 
     run = code_assistant_client.beta.threads.runs.create(
         thread_id=content_thread_id,
@@ -430,7 +396,6 @@ def get_assistant_response(prompt_ary, language):
             run_id=run.id
         )
         time.sleep(2)
-        # logging.info(f"Run status: {run}")
 
     if run.status == "failed":
         return "failed", "failed", "failed"
@@ -445,11 +410,8 @@ def get_assistant_response(prompt_ary, language):
         if message.role == 'assistant':
             res_message = message.content
 
-    # 본문 추출
     res_blog = res_message[0].text.value
     res_tech_stack = []
-    # TODO: ################################ title feature ###########################################
-    # TODO: 제목 뽑기
     res_title = get_title(res_blog, language)
 
     return res_blog, res_tech_stack, res_title, content_thread_id
@@ -491,7 +453,6 @@ def assistant_run(language, thread):
         messages = assistant_client.beta.threads.messages.list(
             thread_id=thread_id
         )
-    # except로 간결하게 만들 수 있지만 이후 디버깅을 위해 남겨둠
     except Exception as e:
         return "not found thread"
 
@@ -536,6 +497,6 @@ def assistant_run(language, thread):
 def get_contributors(user, repo):
     url = f"https://api.github.com/repos/{user}/{repo}/contributors"
     response = requests.get(url)
-    response.raise_for_status()  # 오류 발생 시 예외를 발생시킵니다.
+    response.raise_for_status()
     data = response.json()
     return [contributor['login'] for contributor in data]
